@@ -1,8 +1,8 @@
 openapi: 3.0.3
 info:
-  title: QoD Booking API
+  title: QoS Booking API
   description: |
-    The Quality-On-Demand (QoD) Booking API offers a programmable interface for developers to request the assignment of a certain QoS Profile to a certain device in advance.
+    The Quality of Service (QoS) Booking API offers a programmable interface for developers to request the assignment of a certain QoS Profile to a certain device in advance.
 
     This API enables the developers to book an assignment of the requested QoS profile to an specific device with some conditions such as start time, duration and location.
 
@@ -21,10 +21,10 @@ info:
     # Resources and Operations overview
     The API defines four operations:
 
-    - An operation to setup a new QoD Booking for a given device.
-    - An operation to get the information about a specific QoD Booking, identified by its `BookingId`.
-    - An operation to get the QoD Booking for a given device.
-    - An operation to terminate a QoD Booking, identified by its `BookingId`.
+    - An operation to setup a new QoS Booking for a given device.
+    - An operation to get the information about a specific QoS Booking, identified by its `BookingId`.
+    - An operation to get the QoS Booking for a given device.
+    - An operation to terminate a QoS Booking, identified by its `BookingId`.
 
     # Authorization and authentication
 
@@ -68,20 +68,20 @@ externalDocs:
   url: https://github.com/camaraproject/QualityOnDemand
 
 servers:
-  - url: "{apiRoot}/qod-booking/vwip"
+  - url: "{apiRoot}/qos-booking/vwip"
     variables:
       apiRoot:
         default: http://localhost:9091
         description: API root, defined by the service provider, e.g. `api.example.com` or `api.example.com/somepath`
 tags:
-  - name: QoD Booking
-    description: Manage the booking of QoD
+  - name: QoS Booking
+    description: Manage the booking of QoS
 
 paths:
   /device-qos:
     post:
       tags:
-        - QoD Booking
+        - QoS Booking
       summary: Sets a new booking of QoS for a device
       description: |
         Triggers a new booking to assign certain QoS Profile to certain device.
@@ -93,7 +93,7 @@ paths:
         - If the request includes  the `sink` and `sinkCredential` properties, the client will receive a `status-changed` event with the outcome of the process. The event will be sent also for synchronous operations.
 
         **NOTES:**
-        - When the booking status becomes `UNAVAILABLE`, the QoD Booking resource is not immediately released, but will get deleted automatically, at earliest 360 seconds after.
+        - When the booking status becomes `UNAVAILABLE`, the QoS Booking resource is not immediately released, but will get deleted automatically, at earliest 360 seconds after.
 
         This behavior allows clients which are not receiving notification events but are polling, to get the booking status information.
         - The access token may be either 2-legged or 3-legged.
@@ -117,7 +117,7 @@ paths:
               summary: Booking notifications callback
               description: |
                 Important: this endpoint is to be implemented by the API consumer.
-                The QoD server will call this endpoint whenever any QoD Booking change related event occurs.
+                The QoS Booking server will call this endpoint whenever any QoS Booking change related event occurs.
                 Currently only `Booking_STATUS_CHANGED` event is defined.
               operationId: postBookingNotification
               parameters:
@@ -184,20 +184,20 @@ paths:
           $ref: "#/components/responses/Generic503"
       security:
         - openId:
-            - "qod-booking:device-qos:create"
+            - "qos-booking:device-qos:create"
 
   /device-qos/{bookingId}:
     get:
       tags:
-        - QoD Booking
-      summary: Get QoD Booking information
+        - QoS Booking
+      summary: Get QoS Booking information
       description: |
-        Querying for QoD Booking information details
+        Querying for QoS Booking information details
 
         **NOTES:**
         - The access token may be either 2-legged or 3-legged.
-        - If a 3-legged access token is used, the end user (and device) associated with the QoD Booking must also be associated with the access token.
-        - The QoD Booking must have been created by the same API client given in the access token.
+        - If a 3-legged access token is used, the end user (and device) associated with the QoS Booking must also be associated with the access token.
+        - The QoS Booking must have been created by the same API client given in the access token.
       operationId: getBookingById
       parameters:
         - $ref: "#/components/parameters/BookingId"
@@ -233,12 +233,12 @@ paths:
           $ref: "#/components/responses/Generic503"
       security:
         - openId:
-            - "qod-booking:device-qos:read"
+            - "qos-booking:device-qos:read"
 
     delete:
       tags:
-        - QoD Booking
-      summary: Deletes a QoD Booking
+        - QoS Booking
+      summary: Deletes a QoS Booking
       description: |
         Terminate a QoS Booking.
 
@@ -249,8 +249,8 @@ paths:
 
         **NOTES:**
         - The access token may be either 2-legged or 3-legged.
-        - If a 3-legged access token is used, the end user (and device) associated with the QoD Booking must also be associated with the access token.
-        - The QoD Booking must have been created by the same API client given in the access token.
+        - If a 3-legged access token is used, the end user (and device) associated with the QoS Booking must also be associated with the access token.
+        - The QoS Booking must have been created by the same API client given in the access token.
       operationId: deleteBooking
       parameters:
         - $ref: "#/components/parameters/BookingId"
@@ -286,21 +286,21 @@ paths:
           $ref: "#/components/responses/Generic503"
       security:
         - openId:
-            - "qod-booking:device-qos:delete"
+            - "qos-booking:device-qos:delete"
 
   /retrieve-device-qos:
     post:
       tags:
-        - QoD Booking
-      summary: Gets the QoD Booking for a device
+        - QoS Booking
+      summary: Gets the QoS Booking for a device
       description: |
-        Retrieves the QoD Booking for a device.
+        Retrieves the QoS Booking for a device.
 
         **NOTES:**
         - The access token may be either 2-legged or 3-legged.
-          - If a 3-legged access token is used, the end user (and device) associated with the QoD Booking must also be associated with the access token. In this case it is recommended NOT to include the `device` parameter in the request (see "Handling of device information" within the API description for details).
+          - If a 3-legged access token is used, the end user (and device) associated with the QoS Booking must also be associated with the access token. In this case it is recommended NOT to include the `device` parameter in the request (see "Handling of device information" within the API description for details).
           - If a 2-legged access token is used, the device parameter must be provided and identify a device.
-        - The QoD Booking must have been created by the same API client given in the access token.
+        - The QoS Booking must have been created by the same API client given in the access token.
         - If no Booking is found for the device, an error response 404 is returned with code "NOT_FOUND".
         - This call uses the POST method instead of GET to comply with the [CAMARA Commonalities guidelines](https://github.com/camaraproject/Commonalities/blob/r0.4.0/documentation/API-design-guidelines.md#post-or-get-for-transferring-sensitive-or-complex-data) for sending sensitive or complex data in API calls. Since the device field may contain personally identifiable information, it should not be sent via GET.
 
@@ -347,7 +347,7 @@ paths:
           $ref: "#/components/responses/Generic503"
       security:
         - openId:
-            - "qod-booking:device-qos:read-by-device"
+            - "qos-booking:device-qos:read-by-device"
 
 components:
   securitySchemes:
@@ -390,7 +390,7 @@ components:
       format: uuid
 
     BaseBookingInfo:
-      description: Common attributes of a QoD Booking
+      description: Common attributes of a QoS Booking
       type: object
       properties:
         device:
@@ -422,7 +422,7 @@ components:
       description: |
         Booking related information returned in responses.
         Optional device object only to be returned if provided in createBooking. If more than one type of device identifier was provided, only one identifier will be returned (at implementation choice and with the original value provided in createBooking).
-        Please note that IP addresses of devices can change and get reused, so the original values may no longer identify the same device. They identified the device at the time of QoD Booking creation.
+        Please note that IP addresses of devices can change and get reused, so the original values may no longer identify the same device. They identified the device at the time of QoS Booking creation.
       allOf:
         - $ref: "#/components/schemas/BaseBookingInfo"
         - type: object
@@ -445,7 +445,7 @@ components:
             serviceArea:
               $ref: "#/components/schemas/Area"
             bookingId:
-              $ref: "#/components/schemas/BookingId"              
+              $ref: "#/components/schemas/BookingId"
             startedAt:
               description: Date and time when the Booking became "AVAILABLE". Not to be returned when `status` is "REQUESTED" or "SCHEDULED". Format must follow RFC 3339 and must indicate time zone (UTC or local).
               type: string
@@ -460,7 +460,7 @@ components:
             - status
 
     CreateBooking:
-      description: Attributes to request a new QoD Booking
+      description: Attributes to request a new QoS Booking
       allOf:
         - $ref: "#/components/schemas/BaseBookingInfo"
         - type: object
@@ -484,7 +484,7 @@ components:
               $ref: "#/components/schemas/Area"
 
     RetrieveBookingByDevice:
-      description: Attributes to look for QoD Booking
+      description: Attributes to look for QoS Booking
       type: object
       properties:
         device:
@@ -659,7 +659,7 @@ components:
           description: The type of the event.
           type: string
           enum:
-            - "org.camaraproject.qod-booking.v0.status-changed"
+            - "org.camaraproject.qos-booking.v0.status-changed"
         specversion:
           description: Version of the specification to which this event conforms (must be 1.0 if it conforms to cloudevents 1.0.2 version)
           type: string
@@ -681,10 +681,10 @@ components:
       discriminator:
         propertyName: "type"
         mapping:
-          org.camaraproject.qod-booking.v0.status-changed: "#/components/schemas/EventStatusChanged"
+          org.camaraproject.qos-booking.v0.status-changed: "#/components/schemas/EventStatusChanged"
 
     EventStatusChanged:
-      description: Event to notify a QoD Booking status change
+      description: Event to notify a QoS Booking status change
       allOf:
         - $ref: "#/components/schemas/CloudEvent"
         - type: object
@@ -708,8 +708,8 @@ components:
     StatusInfo:
       description: |
         Reason for the new `status`:
-        * `NETWORK_TERMINATED` - Network terminated the QoD Booking
-        * `DELETE_REQUESTED`- User requested the deletion of the QoD Booking
+        * `NETWORK_TERMINATED` - Network terminated the QoS Booking
+        * `DELETE_REQUESTED`- User requested the deletion of the QoS Booking
 
       type: string
       enum:
@@ -918,11 +918,11 @@ components:
 
     Status:
       description: |
-        The current status of the requested QoD Booking. The status can be one of the following:
-        * `REQUESTED` - QoD Booking has been requested but is still being processed.
-        * `SCHEDULED` - QoD Booking has been requested but is still before the requested start time for the requested QoS profile.
+        The current status of the requested QoS Booking. The status can be one of the following:
+        * `REQUESTED` - QoS Booking has been requested but is still being processed.
+        * `SCHEDULED` - QoS Booking has been requested but is still before the requested start time for the requested QoS profile.
         * `AVAILABLE` - The requested QoS profile has been provisioned to the device, and is active.
-        * `UNAVAILABLE` - The QoD Booking request has been processed but is not active. `statusInfo` may provide additional information about the reason for the unavailability.
+        * `UNAVAILABLE` - The QoS Booking request has been processed but is not active. `statusInfo` may provide additional information about the reason for the unavailability.
       enum:
         - REQUESTED
         - SCHEDULED
@@ -931,10 +931,10 @@ components:
 
     StatusChanged:
       description: |
-        The current status of a requested, scheduled or previously available QoD Booking. Applicable values in the event are:
-        * `SCHEDULED` - QoD Booking has been requested but is still before the requested start time for the requested QoS profile.
+        The current status of a requested, scheduled or previously available QoS Booking. Applicable values in the event are:
+        * `SCHEDULED` - QoS Booking has been requested but is still before the requested start time for the requested QoS profile.
         *  `AVAILABLE` - The requested QoS profile has been provisioned to the device, and is active.
-        *  `UNAVAILABLE` - A requested or previously available QoD Booking is now unavailable. `statusInfo` may provide additional information about the reason for the unavailability.
+        *  `UNAVAILABLE` - A requested or previously available QoS Booking is now unavailable. `statusInfo` may provide additional information about the reason for the unavailability.
       type: string
       enum:
         - SCHEDULED
@@ -1236,7 +1236,7 @@ components:
 
   examples:
     Booking_AVAILABLE:
-      summary: QoD Booking status is available
+      summary: QoS Booking status is available
       description: The booking has become available
       value:
         device:
@@ -1253,7 +1253,7 @@ components:
         status: AVAILABLE
 
     Booking_UNAVAILABLE:
-      summary: QoD Booking status is unavailable
+      summary: QoS Booking status is unavailable
       description: The booking could not be created or is not active anymore
       value:
         duration: 86400
@@ -1274,7 +1274,7 @@ components:
         statusInfo: NETWORK_TERMINATED
 
     Booking_AVAILABLE_WITHOUT_DEVICE:
-      summary: QoD Booking status is available but no device information is provided
+      summary: QoS Booking status is available but no device information is provided
       description: Device is optional in responses and must not be provided if it was not provided in the request
       value:
         qosProfile: QOS_M
@@ -1290,12 +1290,12 @@ components:
 
     Booking_STATUS_CHANGED_EXAMPLE:
       description: Booking status changed
-      summary: Cloud event example for QoD Booking status change to UNAVAILABLE due to NETWORK_TERMINATED
+      summary: Cloud event example for QoS Booking status change to UNAVAILABLE due to NETWORK_TERMINATED
       value:
         id: 83a0d986-0866-4f38-b8c0-fc65bfcda452
-        source: https://api.example.com/qod-Booking/v0.1/device-qos/123e4567-e89b-12d3-a456-426614174000
+        source: https://api.example.com/qos-Booking/v0.1/device-qos/123e4567-e89b-12d3-a456-426614174000
         specversion: "1.0"
-        type: org.camaraproject.qod-booking.v0.status-changed
+        type: org.camaraproject.qos-booking.v0.status-changed
         time: 2021-12-12T00:00:00Z
         data:
           BookingId: 123e4567-e89b-12d3-a456-426614174000
