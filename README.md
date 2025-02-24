@@ -17,7 +17,7 @@ Sandbox API Repository to describe, develop, document, and test the QoSBooking S
 
 * API Repository wiki page: https://lf-camaraproject.atlassian.net/wiki/x/AgDe !! Will be added later and updated
 * Sub Project home page: [QualityOnDemand](https://lf-camaraproject.atlassian.net/wiki/x/XCPe) 
-!! Update with concrete link 
+!! Update with concrete link
 -->
 
 <!-- Alternative for Incubated API Repositories (always part of Sub Project, potentially created as part of the Incubation): 
