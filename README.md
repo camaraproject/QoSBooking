@@ -32,8 +32,9 @@ Incubated API Repository to evolve and maintain the definitions and documentatio
 ## Scope
 
 * Service API(s) “QoSBooking” (see APIBacklog.md) 
-* The API(s) provide(s) the customer with the ability to:  
-  * §Short API scope description§ !! Add here a scope description according to the API proposal
+* The API(s) provide(s) the API consumer with the ability to:  
+  * book an assignment of a certain QoS Profile to a certain device with some conditions such as start time, duration and location in advance.
+  * update the booking, remove it, and get the information of it.
 * Describe, develop, document, and test the API(s)
 * Started: January 2025
 <!-- * Incubated since: §incubation date$ --> 
