@@ -415,7 +415,6 @@ components:
         sinkCredential:
           $ref: "#/components/schemas/SinkCredential"
       required:
-        - device
         - qosProfile
 
     BookingInfo:
