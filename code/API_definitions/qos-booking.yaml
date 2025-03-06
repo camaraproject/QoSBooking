@@ -481,7 +481,11 @@ components:
               example: 3600
             serviceArea:
               $ref: "#/components/schemas/Area"
-
+          required:
+            - startTime
+            - duration
+            - serviceArea
+            
     RetrieveBookingByDevice:
       description: Attributes to look for QoS Booking
       type: object
