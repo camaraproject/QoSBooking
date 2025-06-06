@@ -727,6 +727,7 @@ components:
         mapping:
           CIRCLE: "#/components/schemas/Circle"
           POLYGON: "#/components/schemas/Polygon"
+          AREANAME: "#/components/schemas/AreaName"
 
     AreaType:
       type: string
@@ -734,9 +735,11 @@ components:
         Type of this area.
         CIRCLE - The area is defined as a circle.
         POLYGON - The area is defined as a polygon.
+        AREANAME - The area is defined as an area name.
       enum:
         - CIRCLE
         - POLYGON
+        - AREANAME
 
     Circle:
       description: Circular area
@@ -764,6 +767,17 @@ components:
           properties:
             boundary:
               $ref: "#/components/schemas/PointList"
+
+    AreaName:
+      description: Name of a predefined area
+      allOf:
+        - $ref: "#/components/schemas/Area"
+        - type: object
+          required:
+            - areaName
+          properties:
+            areaName:
+              type: string
 
     PointList:
       description: List of points defining a polygon
