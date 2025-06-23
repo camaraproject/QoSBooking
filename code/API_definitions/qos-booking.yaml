@@ -429,6 +429,8 @@ components:
               example: 3600
             serviceArea:
               $ref: "#/components/schemas/Area"
+            numDevices:
+              $ref: "#/components/schemas/NumDevices"  
             bookingId:
               $ref: "#/components/schemas/BookingId"
             startedAt:
@@ -467,6 +469,8 @@ components:
               example: 3600
             serviceArea:
               $ref: "#/components/schemas/Area"
+            numDevices:
+              $ref: "#/components/schemas/NumDevices"  
           required:
             - startTime
             - duration
@@ -956,6 +960,17 @@ components:
         - status
         - code
         - message
+        
+  # This schema is added to suport experiemental parameter numDevices and could change or would be removed in the future
+    NumDevices:
+      description: | 
+        Maximum Number of devices that can be provisioned. The default value is 1.
+        ** Note **:  NumDevices (and numDevices) is experimental and could change or would be removed in the future
+        if number of devices is more than 1, the device information SHOULD NOT be provided as part of CreateBooking
+      type: integer
+      minimum: 1
+      default: 1
+
 
   responses:
     Generic400:
