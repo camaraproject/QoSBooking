@@ -80,6 +80,8 @@ servers:
 tags:
   - name: QoS Booking
     description: Manage the booking of QoS
+  - name: Device QoS Assignment
+    description: Manage the assignment of devices of QoS
 
 paths:
   /device-qos-bookings:
@@ -332,6 +334,133 @@ paths:
         - openId:
             - "qos-booking:device-qos-bookings:retrieve-by-device"
 
+  /device-qos-assignment:
+    post:
+      tags:
+        - Device QoS Assignment
+      summary: Assign (also called as Provision) one or more devices to the existing QoS Booking
+      description: |
+        This end-point allows the user to assign (provision) one or more devices to the exisitng QoS Booking. 
+        status = 'AVAILABLE' if the provision is successful and the network is available for the said devices to connect and use them at the requested time 
+        status = 'UNAVAILABLE'  if the provision is unsuccessful and the StatusInfo will have more information.
+        This is an asynchronus call and status = REQUESTED, if the network is still working on your request and a callback will come with appropriate status. 
+        
+      operationId: provisionQoS
+      parameters:
+        - $ref: "#/components/parameters/x-correlator"
+      requestBody:
+        description: Parameters to create a new booking
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProvisionInput"
+        required: true
+      callbacks:
+        notifications:
+          "{$request.body#/sink}":
+            post:
+              summary: Booking notifications callback
+              description: |
+                Important: this endpoint is to be implemented by the API consumer.
+                The API provider will call this endpoint whenever any QoS Provisioning change related event occurs.
+              operationId: postBookingNotification
+              parameters:
+                - $ref: "#/components/parameters/x-correlator"
+              requestBody:
+                required: true
+                content:
+                  application/cloudevents+json:
+                    schema:
+                      $ref: "#/components/schemas/CloudEvent"
+              responses:
+                "204":
+                  description: Successful notification
+                  headers:
+                    x-correlator:
+                      $ref: "#/components/headers/x-correlator"
+                "400":
+                  $ref: "#/components/responses/Generic400"
+                "401":
+                  $ref: "#/components/responses/Generic401"
+                "403":
+                  $ref: "#/components/responses/Generic403"
+                "410":
+                  $ref: "#/components/responses/Generic410"
+              security:
+                - {}
+                - notificationsBearerAuth: []
+      responses:
+        "201":
+          description: At least one device is assigned to the booking. The developer can call this endpoint mulitple times with appropriate information
+          headers:
+            x-correlator:
+              $ref: "#/components/headers/x-correlator"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProvisionOutput"
+        "400":
+          $ref: "#/components/responses/CreateBooking400"
+        "401":
+          $ref: "#/components/responses/Generic401"
+        "403":
+          $ref: "#/components/responses/Generic403"
+        "404":
+          $ref: "#/components/responses/GenericDevice404"
+        "409":
+          $ref: "#/components/responses/BookingConflict409"
+        "422":
+          $ref: "#/components/responses/Generic422"
+        "429":
+          $ref: "#/components/responses/Generic429"
+      security:
+        - openId:
+            - "qos-booking:provision-qos-bookings:create"
+
+  /device-qos-release:
+    post:
+      tags:
+        - Device QoS Assignment
+      summary: Release one or more devices from the given QoS Booking
+      description: Release one or more already assigned devices. This is a synchronous call.  If this call fails, the developer can call again with appropriate device info,
+      operationId: deleteQoS
+      parameters:
+        - $ref: "#/components/parameters/x-correlator"
+      requestBody:
+        description: Parameters to release devices
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProvisionInput"
+        required: true
+      responses:
+        "201":
+          description: Release of devices successful
+          headers:
+            x-correlator:
+              $ref: "#/components/headers/x-correlator"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProvisionOutput"
+        "400":
+          $ref: "#/components/responses/CreateBooking400"
+        "401":
+          $ref: "#/components/responses/Generic401"
+        "403":
+          $ref: "#/components/responses/Generic403"
+        "404":
+          $ref: "#/components/responses/GenericDevice404"
+        "409":
+          $ref: "#/components/responses/BookingConflict409"
+        "422":
+          $ref: "#/components/responses/Generic422"
+        "429":
+          $ref: "#/components/responses/Generic429"
+      security:
+        - openId:
+            - "qos-booking:provision-qos-bookings:create"
+
 components:
   securitySchemes:
     openId:
@@ -475,7 +604,92 @@ components:
             - startTime
             - duration
             - serviceArea
-            
+  
+    BookingDetails: 
+      description: |
+        These are the booking details that will be returned once the booking is successful.
+        It returns original number of devices that are requested as well as the remaining number of devices in the booking that can be assigned
+        remainingNumDevices >= 0 and <= requestedNumDevices
+        Once a device is successfully assigned to the booking, remainingNumDevices will reduced by 1, and once the device is released then it will be incremented by 1
+        If the device is already assigned no action will be taken
+      allOf:
+        - type: object
+          properties:
+            bookingId:
+              $ref: "#/components/schemas/BookingId"
+            requestedNumDevices:
+              $ref: "#/components/schemas/NumDevices"     
+            remainingNumDevices:
+              $ref: "#/components/schemas/NumDevices"                             
+            qosProfile:
+              $ref: "#/components/schemas/QosProfileName"
+            startTime:
+              description: Date and time when the API consumer requests the QoS profile to become available. Format must follow RFC 3339 and must indicate time zone (UTC or local).
+              type: string
+              format: date-time
+              example: "2024-06-01T12:00:00Z"
+            duration:
+              description:
+                Requested session duration in seconds.  Value may be explicitly limited for the QoS profile, as specified in the Qos Profile (see qos-profile API). 
+                Implementations can grant the requested session duration or set a different duration from `startTime`, based on network policies or conditions.
+                We can make it optional with a default value of 24 hours. Also the user can ask any big number. But the actual value will be limitted by QoS Profile
+              type: integer
+              format: int32
+              minimum: 1
+              example: 3600
+              default: 86400
+            serviceArea:
+              $ref: "#/components/schemas/Area"          
+          required:
+            - bookingId
+            - requestedNumDevices
+            - remainingNumDevices
+            - qosProfile
+            - startTime
+            - duration
+            - serviceArea 
+
+    ProvisionInput:
+      description: Array of devices that needs to be assigned to a booking. 
+      type: object
+      properties:
+        bookingId:
+          $ref: "#/components/schemas/BookingId"
+        devices:
+          type: array
+          description: Array of devices to be provisioned.  At least one device is required
+          minItems: 1
+          items:
+            $ref: "#/components/schemas/Device"
+        sink:
+          type: string
+          format: uri
+          description: The address to which events shall be delivered, using the HTTP protocol.
+          example: "https://endpoint.example.com/sink"
+        sinkCredential:
+          $ref: "#/components/schemas/SinkCredential" 
+      required:
+        - bookingId
+  
+    ProvisionOutput :
+      description: |
+        Once the provision endpoint succcessful this output will be returend. It will have the BookingId along with all the originally requested information.
+      allOf:
+        - type: object
+          properties:
+            bookingDetails:
+              $ref: "#/components/schemas/BookingDetails"
+            devices:
+              type: array
+              description: Array of devices that are actually provisioned. 
+              minItems: 0
+              items:
+                $ref: "#/components/schemas/Device"         
+            status:
+              $ref: "#/components/schemas/Status"
+            statusInfo:
+              $ref: "#/components/schemas/StatusInfo"
+
     RetrieveBookingByDevice:
       description: Attributes to look for QoS Booking
       type: object
@@ -711,12 +925,19 @@ components:
         * `DURATION_EXPIRED` - Session terminated due to requested duration expired
         * `NETWORK_TERMINATED` - Network terminated the QoS Booking
         * `DELETE_REQUESTED`- User requested the deletion of the QoS Booking
+        * 'DEVICES_MORE_THAN_REQUESTED' - Number of devices requested to provision exceeds the actual number of devices booked in advance
+        * 'BOOKING_INVALID'  -  The given bookingId is invalid, or not availlable to provision devices
+        * 'BOOKING_EXPIRED'  -  The given bookingId is expired
+
 
       type: string
       enum:
         - DURATION_EXPIRED
         - NETWORK_TERMINATED
         - DELETE_REQUESTED
+        - DEVICES_MORE_THAN_REQUESTED
+        - BOOKING_INVALID
+        - BOOKING_EXPIRED
 
     Area:
       description: Base schema for all areas
