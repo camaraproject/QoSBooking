@@ -381,8 +381,6 @@ components:
       description: Common attributes of a QoS Booking
       type: object
       properties:
-        device:
-          $ref: "#/components/schemas/Device"
         qosProfile:
           $ref: "#/components/schemas/QosProfileName"
         applicationServer:
@@ -410,15 +408,16 @@ components:
         Booking related information returned in responses.
         Optional device object only to be returned if provided in createBooking. If more than one type of device identifier was provided, only one identifier will be returned (at implementation choice and with the original value provided in createBooking).
         Please note that IP addresses of devices can change and get reused, so the original values may no longer identify the same device. They identified the device at the time of QoS Booking creation.
-      allOf:
+      allOf:      
         - $ref: "#/components/schemas/BaseBookingInfo"
         - type: object
           properties:
+            device:
+              $ref: "#/components/schemas/DeviceResponse"            
             startTime:
               description: Date and time when QoS profile is scheduled to become available. Format must follow RFC 3339 and must indicate time zone (UTC or local).
               type: string
               format: date-time
-              example: "2024-06-01T12:00:00Z"
             duration:
               description: |
                 Session duration in seconds. Implementations can grant the requested session duration or set a different duration from `startTime`, based on network policies or conditions.
@@ -428,7 +427,6 @@ components:
               type: integer
               format: int32
               minimum: 1
-              example: 3600
             serviceArea:
               $ref: "#/components/schemas/Area"
             bookingId:
@@ -437,7 +435,6 @@ components:
               description: Date and time when the Booking became "AVAILABLE". Not to be returned when `status` is "REQUESTED" or "SCHEDULED". Format must follow RFC 3339 and must indicate time zone (UTC or local).
               type: string
               format: date-time
-              example: "2024-06-01T12:00:00Z"
             status:
               $ref: "#/components/schemas/Status"
             statusInfo:
@@ -455,18 +452,18 @@ components:
         - $ref: "#/components/schemas/BaseBookingInfo"
         - type: object
           properties:
+            device:
+              $ref: "#/components/schemas/Device"
             startTime:
               description: Date and time when the API consumer requests the QoS profile to become available. Format must follow RFC 3339 and must indicate time zone (UTC or local).
               type: string
               format: date-time
-              example: "2024-06-01T12:00:00Z"
             duration:
               description:
                 Requested session duration in seconds.  Value may be explicitly limited for the QoS profile, as specified in the Qos Profile (see qos-profile API). Implementations can grant the requested session duration or set a different duration from `startTime`, based on network policies or conditions.
               type: integer
               format: int32
               minimum: 1
-              example: 3600
             serviceArea:
               $ref: "#/components/schemas/Area"
           required:
@@ -916,6 +913,14 @@ components:
       format: ipv6
       example: 2001:db8:85a3:8d3:1319:8a2e:370:7344
 
+    DeviceResponse:
+      description: |
+        An identifier for the end-user equipment able to connect to the network that the response refers to. This parameter is only returned when the API consumer includes the `device` parameter in their request (i.e. they are using a two-legged access token), and is relevant when more than one device identifier is specified, as only one of those device identifiers is allowed in the response.
+        If the API consumer provides more than one device identifier in their request, the API provider must return a single identifier which is the one they are using to fulfil the request, even if the identifiers do not match the same device. API provider does not perform any logic to validate/correlate that the indicated device identifiers match the same device. No error should be returned if the identifiers are otherwise valid to prevent API consumers correlating different identifiers with a given end user.
+      allOf:
+        - $ref: "#/components/schemas/Device"
+        - maxProperties: 1
+
     Status:
       description: |
         The current status of the requested QoS Booking. The status can be one of the following:
@@ -1227,18 +1232,11 @@ components:
                       - 422
                   code:
                     enum:
-                      - IDENTIFIER_MISMATCH
                       - SERVICE_NOT_APPLICABLE
                       - MISSING_IDENTIFIER
                       - UNSUPPORTED_IDENTIFIER
                       - UNNECESSARY_IDENTIFIER
           examples:
-            GENERIC_422_IDENTIFIER_MISMATCH:
-              description: Inconsistency between identifiers not pointing to the same device
-              value:
-                status: 422
-                code: IDENTIFIER_MISMATCH
-                message: Provided identifiers are not consistent.
             GENERIC_422_SERVICE_NOT_APPLICABLE:
               description: Service not applicable for the provided identifier
               value:
@@ -1298,45 +1296,45 @@ components:
                 message: Rate limit reached.
 
   examples:
-    BOOKING_AVAILABLE:
-      summary: QoS booking status is available
-      description: QoS booking info when status is available
+    BOOKING_AVAILABLE_WITH_DEVICE_DISAMBIGUATION:
+      summary: QoS booking status is available, with device disambiguation
+      description: QoS booking info when status is available and several 
       value:
-        bookingId: "3fa85f64-5717-4562-b3fc-2c963f66afa6"
-        duration: 3600
+        qosProfile: "QOS_L"
+        sink: "https://application-server.com/notifications"
         device:
           ipv4Address:
             publicAddress: "203.0.113.0"
             publicPort: 59765
-        qosProfile: "QOS_L"
-        sink: "https://application-server.com/notifications"
         startTime: "2024-06-01T12:00:00Z"
-        startedAt: "2024-06-01T12:00:00Z"
-        status: "AVAILABLE"
+        duration: 3600
         serviceArea:
           areaType: "CIRCLE"
           center:
             latitude: 50.735851
             longitude: 7.10066
           radius: 100
+        bookingId: "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+        startedAt: "2024-06-01T12:00:00Z"
+        status: "AVAILABLE"
 
     BOOKING_UNAVAILABLE:
       summary: QoS booking is unavailable
       description: QoS booking info when status is unavailable due to network termination
       value:
-        bookingId: "3fa85f64-5717-4562-b3fc-2c963f66afa6"
-        duration: 2428
         qosProfile: "Acme2"
         sink: "https://application-server.com/notifications"
         startTime: "2024-06-01T12:00:00Z"
-        startedAt: "2024-06-01T12:00:00Z"
-        status: "UNAVAILABLE"
+        duration: 2428
         serviceArea:
           areaType: "CIRCLE"
           center:
             latitude: 50.735851
             longitude: 7.10066
           radius: 100
+        bookingId: "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+        startedAt: "2024-06-01T12:00:00Z"
+        status: "UNAVAILABLE"
         statusInfo: "NETWORK_TERMINATED"
 
     BOOKING_STATUS_CHANGED_EXAMPLE:
@@ -1345,8 +1343,8 @@ components:
       value:
         id: "83a0d986-0866-4f38-b8c0-fc65bfcda452"
         source: "https://api.example.com/qod/v1/sessions/123e4567-e89b-12d3-a456-426614174000"
-        specversion: "1.0"
         type: "org.camaraproject.qos-booking.v0.status-changed"
+        specversion: "1.0"
         time: "2024-06-01T13:00:00Z"
         data:
           bookingId: "123e4567-e89b-12d3-a456-426614174000"
@@ -1357,23 +1355,23 @@ components:
       summary: List of QoS sessions for the device
       description: A single QoS session for the device is available
       value:
-        - bookingId: "3fa85f64-5717-4562-b3fc-2c963f66afa6"
-          duration: 3600
-          device:
-            phoneNumber: "+123456789"
+        - qosProfile: "QOS_L"
           applicationServer:
             ipv4Address: "0.0.0.0/0"
-          qosProfile: "QOS_L"
           sink: "https://application-server.com/notifications"
+          device:
+            phoneNumber: "+123456789"
           startTime: "2024-06-01T12:00:00Z"
-          startedAt: "2024-06-01T12:00:00Z"
-          status: "AVAILABLE"
+          duration: 3600
           serviceArea:
             areaType: "CIRCLE"
             center:
               latitude: 50.735851
               longitude: 7.10066
             radius: 100
+          bookingId: "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+          startedAt: "2024-06-01T12:00:00Z"
+          status: "AVAILABLE"
 
     RETRIEVE_BOOKINGS_NO_ITEMS:
       summary: No bookings found for the device
