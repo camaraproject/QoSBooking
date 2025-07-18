@@ -1,5 +1,5 @@
 
-Feature: CAMARA QoS Booking and Assignment, v0.1.0-rc.1
+Feature: CAMARA QoS Booking and Assignment, vwip
     # Input to be provided by the implementation to the tester
     # References to OAS spec schemas refer to schemas specified in qos-booking-and-assignment.yaml
 
@@ -12,7 +12,7 @@ Feature: CAMARA QoS Booking and Assignment, v0.1.0-rc.1
     # Reserve a set of devices for a given qos profile, service area, scheduled future time and duration
     @qos_bookings_createBooking_201_success
     Scenario: Create a QoS booking with valid parameters
-        Given the resource "{apiRoot}/qos-booking-and-assignment/v0.1rc1/qos-bookings"
+        Given the resource "{apiRoot}/qos-booking-and-assignment/vwip/qos-bookings"
         And the header "Content-Type" is set to "application/json"
         And the operationId is "createBooking"
         And the request body is set to a request body compliant with the schema at "/components/schemas/BookingInput"
@@ -46,7 +46,7 @@ Feature: CAMARA QoS Booking and Assignment, v0.1.0-rc.1
     # Given a bookingID, this GET operation gets the details of the original booking
     @qos_bookings_getBookingById_200_success
     Scenario: Get an existing QoS booking by bookingId
-        Given the resource "{apiRoot}/qos-booking-and-assignment/v0.1rc1/qos-bookings"
+        Given the resource "{apiRoot}/qos-booking-and-assignment/vwip/qos-bookings"
         And an existing QoS booking with "bookingId" is created by the operation "createBooking"
         And the operationId is "getBookingById"
 
@@ -72,7 +72,7 @@ Feature: CAMARA QoS Booking and Assignment, v0.1.0-rc.1
     # This operation deletes a booking identified by bookingID. 
     @qos_bookings_deleteBooking_200_success
     Scenario: Delete a QoS booking
-        Given the resource "{apiRoot}/qos-booking-and-assignment/v0.1rc1/qos-bookings"
+        Given the resource "{apiRoot}/qos-booking-and-assignment/vwip/qos-bookings"
         And "bookingId" is created by operation "createBooking"
         And the operationId is "deleteBooking"
 
@@ -99,7 +99,7 @@ Feature: CAMARA QoS Booking and Assignment, v0.1.0-rc.1
     @devices_assignDevices_201_success
     Scenario: Assign a set of devices to a QoS booking
 
-        Given the resource "{apiRoot}/qos-booking-and-assignment/v0.1rc1/qos-bookings/{bookingId}/devices/assign"
+        Given the resource "{apiRoot}/qos-booking-and-assignment/vwip/qos-bookings/{bookingId}/devices/assign"
         And the "bookingId" is created by operation "createBooking"
         And the operationId is "assignDevices"
         And the request body complies with the OAS schema at "/components/schemas/DeviceAssignmentInput"
@@ -125,7 +125,7 @@ Feature: CAMARA QoS Booking and Assignment, v0.1.0-rc.1
     @devices_releaseDevices_200_success
     Scenario: Release one or more of already assigned devices from a QoS booking
 
-        Given the resource "{apiRoot}/qos-booking-and-assignment/v0.1rc1/qos-bookings/{bookingId}/devices/release"
+        Given the resource "{apiRoot}/qos-booking-and-assignment/vwip/qos-bookings/{bookingId}/devices/release"
         And the "bookingId" is created by operation "createBooking"
         And the operationId is "releaseDevices"
         And the request body complies with the OAS schema at "/components/schemas/DeviceAssignmentInput"
@@ -151,7 +151,7 @@ Feature: CAMARA QoS Booking and Assignment, v0.1.0-rc.1
     @devices_getDevicesByBookingId_200_success
     Scenario: Get a list of devices assigned to a QoS booking
 
-        Given the resource "{apiRoot}/qos-booking-and-assignment/v0.1rc1/qos-bookings/{bookingId}/devices"
+        Given the resource "{apiRoot}/qos-booking-and-assignment/vwip/qos-bookings/{bookingId}/devices"
         And the "bookingId" is created by operation "createBooking"
         And the operationId is "getDevicesByBookingId"
  
@@ -172,7 +172,7 @@ Feature: CAMARA QoS Booking and Assignment, v0.1.0-rc.1
     @devices_retrieveBooking_200_success
     Scenario: Get QoS Booking resource information details for a device
         Given a valid testing device with an existing QoS Booking, identified by the token or provided in the request body
-        And the resource "{apiRoot}/qos-booking-and-assignment/v0.1rc1/qos-bookings/retrieve"
+        And the resource "{apiRoot}/qos-booking-and-assignment/vwip/qos-bookings/retrieve"
 
         When the request "retrieveBookingByDevice" is sent
         Then the response status code is 200
