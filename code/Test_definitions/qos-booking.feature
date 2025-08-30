@@ -1,4 +1,4 @@
-Feature: CAMARA QoS Booking API, vwip - API Operations
+Feature: CAMARA QoS Booking API, v0.1.0 - API Operations
     # Input to be provided by the implementation to the tester
     #
     # Implementation indications:
@@ -26,7 +26,7 @@ Feature: CAMARA QoS Booking API, vwip - API Operations
 
   @qos_booking_createBooking_01_success
   Scenario: Create a QoS booking with valid parameters
-    Given the resource "/qos-booking/vwip/device-qos-bookings"
+    Given the resource "/qos-booking/v0.1/device-qos-bookings"
     And the header "Content-Type" is set to "application/json"
     And the request body is set to a request body compliant with the schema at "/components/schemas/CreateBooking"
     And the request body property "$.qosProfile" is set to a valid QoS Profile as returned by QoS Profiles API
@@ -45,7 +45,7 @@ Feature: CAMARA QoS Booking API, vwip - API Operations
 
   @qos_booking_getBooking_01_success
   Scenario: Get an existing QoS booking by bookingId
-    Given the resource "/qos-booking/vwip/device-qos-bookings/{bookingId}"
+    Given the resource "/qos-booking/v0.1/device-qos-bookings/{bookingId}"
     And an existing QoS booking created by operation createBooking
     And the path parameter "bookingId" is set to the value for that QoS booking
     When the request "getBookingById" is sent
@@ -67,7 +67,7 @@ Feature: CAMARA QoS Booking API, vwip - API Operations
   Scenario: Delete a QoS booking
     Given that implementation deletes QoS booking synchronously
     And an existing QoS booking created by operation createBooking
-    And the resource "/qos-booking/vwip/device-qos-bookings/{bookingId}"
+    And the resource "/qos-booking/v0.1/device-qos-bookings/{bookingId}"
     And the path parameter "bookingId" is set to the value for that QoS booking
     When the request "deleteBooking" is sent
     Then the response status code is 204
@@ -78,7 +78,7 @@ Feature: CAMARA QoS Booking API, vwip - API Operations
   @qos_booking_retrieveBooking_01_success
   Scenario: Get QoS Booking resource information details for a device
     Given a valid testing device with an existing QoS Booking, identified by the token or provided in the request body
-    And the resource "/qos-booking/vwip/retrieve-device-qos-bookings"
+    And the resource "/qos-booking/v0.1/retrieve-device-qos-bookings"
     When the request "retrieveBookingByDevice" is sent
     Then the response status code is 200
     And the response header "Content-Type" is "application/json"
