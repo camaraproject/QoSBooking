@@ -9,7 +9,7 @@
 
 # QoSBooking
 
-Sandbox API Repository to describe, develop, document, and test the QoSBooking Service API(s) within the Sub Project [QualityOnDemand](https://lf-camaraproject.atlassian.net/wiki/x/XCPe)
+Sandbox API Repository to describe, develop, document, and test the QoSBooking Service API(s) within the Sub Project [Connectivity Quality Management](https://lf-camaraproject.atlassian.net/wiki/x/XCPe)
 
 * API Repository [wiki page](https://lf-camaraproject.atlassian.net/wiki/x/SADHB)
 
@@ -38,5 +38,5 @@ Sandbox API Repository to describe, develop, document, and test the QoSBooking S
     * [Registration / Join](https://zoom-lfx.platform.linuxfoundation.org/meeting/94112812156?password=f238d6af-c959-48d7-a862-abdb3c648e40)
     * Minutes: Access [meeting minutes](https://lf-camaraproject.atlassian.net/wiki/x/ABje)
 * Mailing List
-    * Subscribe / Unsubscribe to the mailing list <https://lists.camaraproject.org/g/sp-qod>.
-    * A message to the community of this Sub Project can be sent using <sp-qod@lists.camaraproject.org>.
+    * Subscribe / Unsubscribe to the mailing list <https://lists.camaraproject.org/g/sp-cqm>.
+    * A message to the community of this Sub Project can be sent using <sp-cqm@lists.camaraproject.org>.
