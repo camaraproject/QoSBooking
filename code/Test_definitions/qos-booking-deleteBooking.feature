@@ -58,7 +58,6 @@ Feature: CAMARA QoS Booking API, vwip - Operation deleteBooking
     And the response header "Content-Type" is "application/json"
     And the response header "x-correlator" has same value as the request header "x-correlator"
 
-
   @qos_booking_deleteBooking_02_event_notification
   Scenario: Event is received if the booking was SCHEDULED or AVAILABLE and sink was provided
     Given an existing QoS booking created by operation createBooking with provided values for "sink" and "sinkCredential", and with status "AVAILABLE" or "SCHEDULED"
@@ -80,7 +79,7 @@ Feature: CAMARA QoS Booking API, vwip - Operation deleteBooking
 
   # 404 NOT_FOUND is an alternative if path parameter format is not validated
   @qos_booking_deleteBooking_400.1_invalid_booking_id
-  Scenario: Invalid Argument. Generic Syntax Exception
+  Scenario: Invalid bookingId
     Given the path parameter "bookingId" has not a UUID format
     When the request "deleteBooking" is sent
     Then the response status code is 400
@@ -93,7 +92,7 @@ Feature: CAMARA QoS Booking API, vwip - Operation deleteBooking
   # Implementations may decide to not send x-correlator in the response if is invalid in the request
   # (but not explicitly forbidden either)
   @qos_booking_deleteBooking_400.2_invalid_correlator
-  Scenario: Invalid Argument. Generic Syntax Exception
+  Scenario: Invalid x-correlator
     Given the header "x-correlator" does not comply with the schema at "#/components/schemas/XCorrelator"
     When the request "deleteBooking" is sent
     Then the response status code is 400

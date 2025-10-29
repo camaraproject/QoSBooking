@@ -56,7 +56,7 @@ Feature: CAMARA QoS Booking API, vwip - Operation getBookingById
 
   # 404 NOT_FOUND is an alternative if path parameter format is not validated
   @qos_booking_getBookingById_400.1_invalid_booking_id
-  Scenario: Invalid Argument. Generic Syntax Exception
+  Scenario: Invalid bookingId
     Given the path parameter "bookingId" has not a UUID format
     When the request "getBookingById" is sent
     Then the response status code is 400
@@ -69,7 +69,7 @@ Feature: CAMARA QoS Booking API, vwip - Operation getBookingById
   # Implementations may decide to not send x-correlator in the response if is invalid in the request
   # (but not explicitly forbidden either)
   @qos_booking_getBookingById_400.2_invalid_correlator
-  Scenario: Invalid Argument. Generic Syntax Exception
+  Scenario: Invalid x-correlator
     Given the header "x-correlator" does not comply with the schema at "#/components/schemas/XCorrelator"
     When the request "getBookingById" is sent
     Then the response status code is 400

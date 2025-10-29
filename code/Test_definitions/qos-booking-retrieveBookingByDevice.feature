@@ -198,7 +198,6 @@ Feature: CAMARA QoS Booking API, vwip - Operation retrieveBookingByDevice
 
   # Response 422
 
-    
   # Code UNNECESSARY_IDENTIFIER
 
   @qos_booking_retrieveBookingByDevice_C01.04_unnecessary_device

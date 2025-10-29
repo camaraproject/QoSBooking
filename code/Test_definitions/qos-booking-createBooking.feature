@@ -23,7 +23,6 @@ Feature: CAMARA QoS Booking API, vwip - Operation createBooking
     # Properties not explicitly overwritten in the Scenarios can take any values compliant with the schema
     And the request body is set by default to a request body compliant with the schema at "/components/schemas/CreateBooking"
 
-
   # Response 201
 
   @qos_booking_createBooking_01_common_success_scenario
@@ -86,7 +85,7 @@ Feature: CAMARA QoS Booking API, vwip - Operation createBooking
     And the response body complies with the OAS schema at "/components/schemas/BookingInfo"
     And the response property "$.device" includes only one device
 
-  # Lifecycle of a successful booking    
+  # Lifecycle of a successful booking
 
   @qos_booking_createBooking_04_1_sinkcredential_provided
   Scenario: Create QoS booking with sink and sinkCredential provided
@@ -189,7 +188,7 @@ Feature: CAMARA QoS Booking API, vwip - Operation createBooking
     And the event body property "$.data.bookingId" has the same value as createBooking response property "$.bookingId"
     And the event body property "$.data.status" is "UNAVAILABLE"
     And the event body property "$.data.statusInfo" is set to "NETWORK_TERMINATED"
-    
+
   # Response 400
 
   ## Code INVALID_ARGUMENT
@@ -453,7 +452,6 @@ Feature: CAMARA QoS Booking API, vwip - Operation createBooking
     And the response property "$.code" is "IDENTIFIER_NOT_FOUND"
     And the response property "$.message" contains a user friendly text
 
-
   # Response 409
 
   ## Code CONFLICT
@@ -468,8 +466,7 @@ Feature: CAMARA QoS Booking API, vwip - Operation createBooking
     And the response header "Content-Type" is "application/json"
     And the response property "$.status" is 409
     And the response property "$.code" is "CONFLICT"
-    And the response property "$.message" contains a user friendly text  
-
+    And the response property "$.message" contains a user friendly text
 
   # Response 422
 
@@ -533,7 +530,7 @@ Feature: CAMARA QoS Booking API, vwip - Operation createBooking
     And the response property "$.status" is 422
     And the response property "$.code" is "QOS_BOOKING.NOT_MANAGED_AREA_TYPE"
     And the response property "$.message" contains a user-friendly text
-    
+
     Examples:
       | unsupported_area_type |
       | CIRCLE                |
@@ -551,7 +548,7 @@ Feature: CAMARA QoS Booking API, vwip - Operation createBooking
     And the response property "$.status" is 422
     And the response property "$.code" is "QOS_BOOKING.INVALID_AREA"
     And the response property "$.message" contains a user-friendly text
-        
+
     Examples:
       | area_type | area_type_schema             |
       | CIRCLE    | /components/schemas/Circle   |
