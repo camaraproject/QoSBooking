@@ -23,14 +23,27 @@ Sandbox API Repository to describe, develop, document, and test the QoSBooking S
 * Started: January 2025
 <!-- * Incubated since: §incubation date$ --> 
 
+<!-- CAMARA:RELEASE-INFO:START -->
+<!-- This section is automatically maintained by the CAMARA project-administration tooling: https://github.com/camaraproject/project-administration -->
+
 ## Release Information
 
-* Note: Please be aware that the project will have updates to the main branch. There are no compatibility guarantees associated with code in any branch, including main, until a new release is created. For example, changes may be reverted before a release is created. For best results, use the latest available release.
+> [!NOTE]
+> Please be aware that the project will have frequent updates to the main branch. There are no compatibility guarantees associated with code in any branch, including main, until a new release is created. For example, changes may be reverted before a release is created. **For best results, use the latest available release**.
 
-* **NEW**: **The latest public release is [r1.2](https://github.com/camaraproject/QoSBooking/releases/tag/r1.2), with the following API versions:**
-
-    - qos-booking 0.1.0 (booking QoS for a single device for a certain time and area)<br>[YAML spec file](https://github.com/camaraproject/QoSBooking/blob/r1.2/code/API_definitions/qos-booking.yaml) | [View it on ReDoc](https://redocly.github.io/redoc/?url=https://raw.githubusercontent.com/camaraproject/QoSBooking/r1.2/code/API_definitions/qos-booking.yaml&nocors) | [View it on Swagger Editor](https://camaraproject.github.io/swagger-ui/?url=https://raw.githubusercontent.com/camaraproject/QoSBooking/r1.2/code/API_definitions/qos-booking.yaml&nocors)
-    - qos-booking-and-assignment 0.1.0 (booking QoS for multiple devices for a certain time and area, and assignment of devices to the booking, e.g. on a later time)<br>[YAML spec file](https://github.com/camaraproject/QoSBooking/blob/r1.2/code/API_definitions/qos-booking-and-assignment.yaml) | [View it on ReDoc](https://redocly.github.io/redoc/?url=https://raw.githubusercontent.com/camaraproject/QoSBooking/r1.2/code/API_definitions/qos-booking-and-assignment.yaml&nocors) | [View it on Swagger Editor](https://camaraproject.github.io/swagger-ui/?url=https://raw.githubusercontent.com/camaraproject/QoSBooking/r1.2/code/API_definitions/qos-booking-and-assignment.yaml&nocors)
+* **NEW**: The latest public release is [r1.2](https://github.com/camaraproject/QoSBooking/releases/tag/r1.2), with the following API versions:
+  * **qos-booking-and-assignment v0.1.0**
+  [[YAML]](https://github.com/camaraproject/QoSBooking/blob/r1.2/code/API_definitions/qos-booking-and-assignment.yaml)
+  [[ReDoc]](https://redocly.github.io/redoc/?url=https://raw.githubusercontent.com/camaraproject/QoSBooking/r1.2/code/API_definitions/qos-booking-and-assignment.yaml&nocors)
+  [[Swagger]](https://camaraproject.github.io/swagger-ui/?url=https://raw.githubusercontent.com/camaraproject/QoSBooking/r1.2/code/API_definitions/qos-booking-and-assignment.yaml)
+  * **qos-booking v0.1.0**
+  [[YAML]](https://github.com/camaraproject/QoSBooking/blob/r1.2/code/API_definitions/qos-booking.yaml)
+  [[ReDoc]](https://redocly.github.io/redoc/?url=https://raw.githubusercontent.com/camaraproject/QoSBooking/r1.2/code/API_definitions/qos-booking.yaml&nocors)
+  [[Swagger]](https://camaraproject.github.io/swagger-ui/?url=https://raw.githubusercontent.com/camaraproject/QoSBooking/r1.2/code/API_definitions/qos-booking.yaml)
+* The latest public release is always available here: https://github.com/camaraproject/QoSBooking/releases/latest
+* Other releases of this repository are available in https://github.com/camaraproject/QoSBooking/releases
+* For changes see [CHANGELOG.md](https://github.com/camaraproject/QoSBooking/blob/main/CHANGELOG.md)
+<!-- CAMARA:RELEASE-INFO:END -->
 
 ## Contributing
 * Meetings are held virtually 
