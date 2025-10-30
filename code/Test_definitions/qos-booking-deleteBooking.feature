@@ -26,7 +26,7 @@ Feature: CAMARA QoS Booking API, vwip - Operation deleteBooking
   # From the current spec it is assumed that only booking in status "SCHEDULED" or "AVAILABLE" may be asynchronously deleted
   # If booking is in status "REQUESTED" or "UNAVAILABLE", a synchronous deletion is expected
   @qos_booking_deleteBooking_202_async_delete_existing_qos_booking
-  Scenario: Delete an existing QoS booking (async deletion process)
+  Scenario Outline: Delete an existing QoS booking (async deletion process)
     Given an existing QoS booking created by operation createBooking in status "SCHEDULED" or "AVAILABLE"
     And the deletion process for that QoS booking in the implementation is asynchronous
     And the path parameter "bookingId" is set to the value for that QoS booking
@@ -36,16 +36,20 @@ Feature: CAMARA QoS Booking API, vwip - Operation deleteBooking
     And the response header "x-correlator" has same value as the request header "x-correlator"
     And the response body complies with the OAS schema at "#/components/schemas/BookingInfo"
     # Additionally any success response has to comply with some constraints beyond the schema compliance
-    And the response property "$.device" exists only if provided for createBooking and with the same value
-    And the response property "$.applicationServer" exists only if provided for createBooking and with the same value
-    And the response property "$.qosProfile" has the value provided for createBooking
-    And the response property "$.devicePorts" exists only if provided for createBooking and with the same value
-    And the response property "$.applicationServerPorts" exists only if provided for createBooking and with the same value
-    And the response property "$.sink" exists only if provided for createBooking and with the same value
-    # sinkCredential not explicitly mentioned to be returned if present, as this is debatable for security concerns
-    And the response property "$.status" is "SCHEDULED" or "AVAILABLE"
-    And the response property "$.startedAt" exists only if "$.status" is "AVAILABLE" and the value is in the past
-    And the response property "$.statusInfo" is "DELETE_REQUESTED"
+    And the response property "<property>" matches the rule: <condition>
+
+    Examples:
+      | property                   | condition                                                             |
+      | "$.device"                 | exists only if provided for createBooking and with the same value     |
+      | "$.applicationServer"      | exists only if provided for createBooking and with the same value     |
+      | "$.qosProfile"             | has the value provided for createBooking                              |
+      | "$.devicePorts"            | exists only if provided for createBooking and with the same value     |
+      | "$.applicationServerPorts" | exists only if provided for createBooking and with the same value     |
+      | "$.sink"                   | exists only if provided for createBooking and with the same value     |
+      # sinkCredential not explicitly mentioned to be returned if present, as this is debatable for security concerns
+      | "$.status"                 | is "SCHEDULED" or "AVAILABLE"                                         |
+      | "$.startedAt"              | exists only if "$.status" is "AVAILABLE" and the value is in the past |
+      | "$.statusInfo"             | is "DELETE_REQUESTED"                                                 |
 
   # Response 204
 

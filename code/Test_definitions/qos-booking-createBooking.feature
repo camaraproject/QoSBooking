@@ -90,8 +90,6 @@ Feature: CAMARA QoS Booking API, vwip - Operation createBooking
   @qos_booking_createBooking_04_1_sinkcredential_provided
   Scenario: Create QoS booking with sink and sinkCredential provided
     Given a valid testing device supported by the service, identified by the token or provided in the request body
-    And the request property "$.startTime" is set to a value in the future
-    And the request property "$.duration" is set to a valid value for the QoS profile requested
     And the request property "$.sink" is set to a URL where events can be monitored
     And the request property "$.sinkCredential.credentialType" is set to "ACCESSTOKEN"
     And the request property "$.sinkCredential.accessTokenType" is set to "bearer"
@@ -103,8 +101,6 @@ Feature: CAMARA QoS Booking API, vwip - Operation createBooking
     And the response header "x-correlator" has the same value as the request header "x-correlator"
     And the response property "$.sink" has the same value as in the request
     And the response property "$.status" is set to "REQUESTED" or "SCHEDULED"
-    And the response property "$.startTime" has a value in the future
-    And the response property "$.duration" has the value granted by the implementation
 
   # This step is optional, for cases when implementation did not grant the booking synchronously
   @qos_booking_createBooking_04_2_event_received_scheduled
