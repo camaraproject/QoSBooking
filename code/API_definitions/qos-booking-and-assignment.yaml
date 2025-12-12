@@ -103,16 +103,17 @@ paths:
         - QoS Booking
       summary: This operation reserves required QoS in advance up to a certain number of devices in certain serviceArea and time slot. The devices have to be attached with a subsequent operation.
       description: |
-        Triggers a new booking in advance and assign this reserved booking profile to one or more devices when the devices are ready.
-        - If the booking is completed synchronously, the response will be 201 with `status` = `SUCCESSFUL`.
-        - If the booking request is accepted but not yet completed, the response will be 201 with `status` = `PENDING`.
-        - If the operator determines synchronously that the booking request cannot be fulfilled, the response will be 201 with `status` = `FAILURE`.
-        - If the operator is not able to determine the booking availability immediately and the request includes a notification callback, the client will receive a `status-changed` event with the outcome of the process.
-        - The operator determines immediately:
-          - `SUCCESSFUL` or `FAILURE`
-        - If the operator needs more time to determine the availability
-          - `PENDING`
-        - The devices can be assigned anytime from the time booking is successful (`status` = `SUCCESSFUL`) and before the scheduled duration ends.
+        This operation reserves a Quality of Service (QoS) booking for a specified number of devices, service area, and scheduled time/duration. 
+        Devices can be assigned to the booking at any time after the reservation is successful and before the scheduled end-time. 
+
+        - `Pre-assigned devices :` These devices will be automatically provisioned and activated with the requested QoS profile exactly when the scheduled start time arrives. 
+        - `Late-assigned devices:` Devices assigned after the schedule starts (but before it ends) will be provisioned and activated with the requested QoS profile immediately upon assignment. 
+
+        This operation will return with the following responses:  
+        - `HTTP 201 (status: SUCCESSFUL):` The operator was able to confirm the booking immediately. 
+        - `HTTP 202 (status: PENDING).  :` The operator is unable to confirm immediately, and the booking status is pending. A subsequent notification will be sent to confirm the final status, if available. 
+        - `HTTP 4xx (Failure Condition) :` The operator determined that the booking is unavailable. The response will include specific status codes and descriptions detailing the error. 
+
         - Respective `statusInfo` contains additional information under certain conditions.
 
       operationId: createBooking
@@ -166,7 +167,7 @@ paths:
                 - notificationsBearerAuth: []
       responses:
         "201":
-          description: Booking created
+          description: Booking creation is successful. 
           headers:
             x-correlator:
               $ref: "#/components/headers/x-correlator"
@@ -177,8 +178,18 @@ paths:
               examples:
                 BOOKING_SUCCESSFUL:
                   $ref: "#/components/examples/BOOKING_SUCCESSFUL"
-                BOOKING_FAILURE:
-                  $ref: "#/components/examples/BOOKING_FAILURE"
+        "202":
+          description: | 
+            Booking request is accepted but pending. 
+            Confirmation of success or failure will be sent as a callback notification. 
+          headers:
+            x-correlator:
+              $ref: "#/components/headers/x-correlator"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BookingOutput"
+              examples:
                 BOOKING_PENDING:
                   $ref: "#/components/examples/BOOKING_PENDING"
         "400":
@@ -204,12 +215,12 @@ paths:
       tags:
         - QoS Booking
       summary: Get the Booking information for a given QoS Booking identified by `bookingId`.
-      description: |
-        This endpoint gets booking information for the given bookingId.
-        - A booking request may be failed (`status` = `FAILURE`). `statusInfo` contains additional information.
-        - Based on the status of the booking, an appropriate error message will be returned.
-        - If a booking is available (`status` = `SUCCESSFUL` and booking is active) then this endpoint will return the booking information along with number of devices still can be assigned to the booking.
-        - `statusInfo` contains additional information under certain conditions.
+      description: | 
+        This operation is synchronous and retrieves the details of an existing Quality of Service (QoS) booking using its unique identifier (`bookingId`). This `bookingId` is the identifier returned by the initial booking operation upon successful creation. 
+
+        Response Scenarios:                   
+          - `HTTP 200 (status: SUCCESSFUL):` The booking details are successfully retrieved and returned in the response body along with the remaining number of devices still can be assigned to the booking. 
+          - `HTTP 4xx (Failure Condition) :` The request failed, and an appropriate HTTP 4xx error code is returned with a specific status and description. 
 
       operationId: getBookingById
       parameters:
@@ -245,18 +256,20 @@ paths:
     delete:
       tags:
         - QoS Booking
-      summary: Cancel an existing QoS Booking
+      summary: This operation cancels an existing QoS Booking and release the associated resources.
       description: |
-        Cancel an existing booking and release resources related to that booking.
-        - The QoS Booking must have been created by the same API client given in the access token.
-        - `SUCCESSFUL` and `FAILURE` condition of deleting a booking is based on the implementation of the operator.
-        - Operator SHOULD properly document their 'delete' behavior.  Following are some guidelines:
+        This operation cancels and deletes a specific QoS booking using its unique identifier and releases the resources related to that booking. It supports both synchronous and asynchronous processing.  
 
-        - If a booking is made, and no devices are assigned - `SUCCESSFUL`. Return message will contain only booking info.
-        - If a booking is made, and devices are assigned, but session is not active - `SUCCESSFUL`. Return message will contain information related to booking.
-        - If a booking is made, and devices are not assigned, but session is active - `SUCCESSFUL`. Return message will contain only booking info
-        - If a booking is made, and devices are assigned, and the session is active - `SUCCESSFUL / FAILURE` is determined by the operator. The Operator may terminate the session, release the devices, and release the booking.
-
+        Constraints & Notes:
+          - The Quality of Service (QoS) booking must have been created by the same API client identified in the access token. 
+          - The SUCCESSFUL and FAILURE conditions for a deletion are dependent on the operator's specific implementation. 
+          - Operators SHOULD properly document their `Booking Cancellation` behavior with clear policies and the respective terms and conditions. 
+ 
+        Response Scenarios:
+          - `HTTP 200 (status: SUCCESSFUL):` The booking was deleted immediately (synchronous success). 
+          - `HTTP 202 (status: PENDING).  :` The request has been accepted for processing, but the deletion is not yet complete (asynchronous processing). A subsequent notification will be sent to confirm the final status. 
+          - `HTTP 4xx (Failure Condition) :` The request failed, and an appropriate HTTP 4xx error code is returned with a specific status and description. 
+ 
       operationId: deleteBooking
       parameters:
         - $ref: "#/components/parameters/BookingId"
@@ -307,8 +320,8 @@ paths:
       summary: Assign one or more devices to an existing QoS Booking identified by `bookingId`
       description: |
         This endpoint allows the end user to assign one or more devices to the existing QoS Booking.
-        - status = `SUCCESSFUL` if the assignment is successful for all the devices, and the network is available for the said devices to connect and use them at the requested time
-        - status = `FAILURE`  if the assignment is unsuccessful and the 'statusInfo' will have more information.
+        - If the assignment is successful for all the devices, the call will return 201 success code with status `SUCCESSFUL` and the network is available for the said devices to connect and use them at the requested time
+        - If the assignment request failed for some reason, this call we be retured with 4xx error code with appropirate status codes 
         - This is an asynchronous call,  and status = `PENDING` if the network is still working on your request. A callback will come with appropriate status.
         - If the network could not assign all the requested devices, then status = `PARTIAL_SUCCESS` and the `statusInfo` will have additional information.
         - If a 2-legged access token is used, then the device details SHOULD BE provided as part of the input, and the output will return the array of actually assigned devices.
@@ -384,8 +397,22 @@ paths:
                   $ref: "#/components/examples/ASSIGNMENT_FAILURE_1"
                 ASSIGNMENT_FAILURE_2:
                   $ref: "#/components/examples/ASSIGNMENT_FAILURE_2"
+
+        "202":
+          description: | 
+            Assignment request is accepted but pending decision.
+            Once the decision is made a callback notification will be sent with appropirate success or failure Confirmation
+          headers:
+            x-correlator:
+              $ref: "#/components/headers/x-correlator"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DeviceAssignmentOutput"
+              examples:
                 ASSIGNMENT_PENDING:
                   $ref: "#/components/examples/ASSIGNMENT_PENDING"
+
         "400":
           $ref: "#/components/responses/CreateBookingOrAssign400"
         "401":
