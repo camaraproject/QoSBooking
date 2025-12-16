@@ -462,8 +462,12 @@ paths:
         - Device Assignment
       summary: Release one or more devices from the given QoS Booking
       description: |
-        Release one or more already assigned devices. This is a synchronous call.
-        - This call will release one or more of the devices that are identifiable and part of the booking.
+        This endpoint will release one or more assigned devices. The timing of the release depends on the current status:
+
+        - `Before the scheduled time:` The release will be mostly immediate.
+        - `After the scheduled time (devices active):` The release may take time as the system needs to free up associated resources.
+
+         A callback notification will be sent once the devices are successfully released, provided one is registered with the device assignment. This endpoint functions in both synchronous and asynchronous modes.
         - If the device is assigned using 3-legged access token:
           - If the device is active, then release can happen in the same way.
           - If the device has failed for some reason, and the device information is not known, then the device can't be released from booking.
@@ -485,12 +489,15 @@ paths:
       responses:
         "200":
           description: |
-            At least one of the requested devices is successfully released from the booking.
-            Example:
-              If the enduser asks to release 2 devices and the network can release only one device
-                `status` = `PARTIAL_SUCCESS` and statusInfo will have additional details
-              In addition, the returned message body will contain the list of actual devices that are released.
+            At least one of the requested devices has been successfully released from the booking.
 
+            Example:
+
+              If an end-user requests to release two devices but the network can release only one:
+              - The `status` will be `PARTIAL_SUCCESS`.
+              - The `statusInfo` field will contain additional details.
+
+              The returned message body will also contain the list of the actual devices that were released.
           headers:
             x-correlator:
               $ref: "#/components/headers/x-correlator"
@@ -501,6 +508,20 @@ paths:
               examples:
                 ASSIGNMENT_RELEASED:
                   $ref: "#/components/examples/ASSIGNMENT_RELEASED"
+        "202":
+          description: |
+            The release request is accepted but is pending for internal reasons, or the release process has started and is currently in progress.
+            Once all devices are released, a callback notification will be sent with the appropriate success or failure confirmation
+          headers:
+            x-correlator:
+              $ref: "#/components/headers/x-correlator"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DeviceAssignmentOutput"
+              examples:
+                ASSIGNMENT_RELEASE_PENDING:
+                  $ref: "#/components/examples/ASSIGNMENT_RELEASE_PENDING"
         "400":
           $ref: "#/components/responses/Generic400"
         "401":
@@ -1264,6 +1285,7 @@ components:
         * `BOOKING_CANCELLED` - The user requests to release a device from booking, but the booking is cancelled
         * `BOOKING_EXPIRED` - The user requests to release a device from booking, but the booking is expired and no more active
         * `BOOKING_TERMINATED` - For unknown reasons booking is terminated by the operator. A booking callback may be issued.
+        * `RELEASE_PENDING` - Release of requested devices is currently in progress. Some might have already been released, and some are still being processed.
 
       type: string
       enum:
@@ -1277,6 +1299,7 @@ components:
         - BOOKING_CANCELLED
         - BOOKING_EXPIRED
         - BOOKING_TERMINATED
+        - RELEASE_PENDING
 
     ErrorInfo:
       description: Common schema for errors
@@ -1964,6 +1987,28 @@ components:
           - phoneNumber: "+14145550101"
         status: "SUCCESSFUL"
         statusInfo: "ASSIGNMENT_COMPLETED"
+
+    ASSIGNMENT_RELEASE_PENDING:
+      summary: Release is pending for requested devices
+      description: Release of requested devices is currently in progress. Some might have already been released, and some are still being processed.
+      value:
+        bookingDetails:
+          bookingId: "8e2f6f30-0a1c-4c6b-92e1-1bd05aef1c58"
+          totalDevices: 15
+          remainingDevices: 14
+          qosProfile: "QOS_MEDIA_BROADCAST"
+          startTime: "2025-10-27T15:00:00.000Z"
+          duration: 3600
+          serviceArea:
+            areaType: "CIRCLE"
+            center:
+              latitude: 37.735851
+              longitude: -127.10066
+            radius: 100
+        devices:
+          - phoneNumber: "+14145550101"
+        status: "PENDING"
+        statusInfo: "RELEASE_PENDING"
 
     ASSIGNMENT_RETRIEVED_1:
       summary: Retrieve successful
