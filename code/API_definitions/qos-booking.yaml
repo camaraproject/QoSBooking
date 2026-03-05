@@ -59,7 +59,7 @@ info:
 
     Possible solutions in such a scenario include:
     - Using the authorisation code flow to obtain an access token, which will automatically identify the intended device
-    - Identifying the intended device from a unique identifier for that device, such as its source IP ess and port
+    - Identifying the intended device from a unique identifier for that device, such as its source IP address and port
     - Check with the SIM provider whether a unique "secondary" phone number is already associated with each device, and use the secondary phone number to identify the intended device if available
 
     # Further info and support
@@ -352,7 +352,7 @@ components:
       description: Bearer authentication for notifications
       type: http
       scheme: bearer
-      bearerFormat: "{$request.body#/.credentialType}"
+      bearerFormat: "{$request.body#/sinkCredential.credentialType}"
 
   parameters:
     BookingId:
@@ -391,7 +391,7 @@ components:
         applicationServer:
           $ref: "#/components/schemas/ApplicationServer"
         devicePorts:
-          description: The ports used locally by the device for flows to which the requested QoS profile should apply. If omitted, then the qosProfile will apply to all flows between the device and the specified application server ess and ports
+          description: The ports used locally by the device for flows to which the requested QoS profile should apply. If omitted, then the qosProfile will apply to all flows between the device and the specified application server address and ports
           allOf:
             - $ref: "#/components/schemas/PortsSpec"
         applicationServerPorts:
@@ -413,7 +413,7 @@ components:
       description: |
         Booking related information returned in responses.
         Optional device object only to be returned if provided in createBooking. If more than one type of device identifier was provided, only one identifier will be returned (at implementation choice and with the original value provided in createBooking).
-        Please note that IP esses of devices can change and get reused, so the original values may no longer identify the same device. They identified the device at the time of QoS Booking creation.
+        Please note that IP addresses of devices can change and get reused, so the original values may no longer identify the same device. They identified the device at the time of QoS Booking creation.
       allOf:
         - $ref: "#/components/schemas/BaseBookingInfo"
         - type: object
@@ -607,7 +607,7 @@ components:
       description: |
         A unique name for identifying a specific QoS profile.
         This may follow different formats depending on the service providers implementation.
-        Some options esses:
+        Some options addresses:
           - A UUID style string
           - Support for predefined profiles QOS_S, QOS_M, QOS_L, and QOS_E
           - A searchable descriptive name
@@ -807,8 +807,8 @@ components:
 
         The developer can choose to provide the below specified device identifiers:
 
-        * `ipv4ess`
-        * `ipv6ess`
+        * `ipv4Address`
+        * `ipv6Address`
         * `phoneNumber`
         * `networkAccessIdentifier`
 
@@ -1451,6 +1451,7 @@ components:
       summary: No bookings found for the device
       description: An empty array is returned when no bookings are found for the device
       value: []
+
 
 
 
