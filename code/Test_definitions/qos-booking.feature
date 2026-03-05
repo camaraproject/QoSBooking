@@ -54,7 +54,7 @@ Feature: CAMARA QoS Booking API, vwip - API Operations
     And the response header "x-correlator" has the same value as the request header "x-correlator"
     And the response body complies with the OAS schema at "/components/schemas/BookingInfo"
     # Additionally any success response has to comply with some constraints beyond the schema compliance
-    And the response body property "$.device" exists only if provided for createBooking and with the same value
+    And the response body property "$.device" exists only if provided for createBooking and always if more than one device identifier is provided, And contains a single device identifier that was included in the request
     And the response body property "$.qosProfile" has the value provided for createBooking
     And the response body property "$.startTime" has the value provided for createBooking
     And the response body property "$.duration" has the value provided for createBooking
@@ -85,7 +85,7 @@ Feature: CAMARA QoS Booking API, vwip - API Operations
     And the response header "x-correlator" has the same value as the request header "x-correlator"
     And the response body complies with the OAS schema at "/components/schemas/RetrieveBookingsOutput"
     # Additionally any success response has to comply with some constraints beyond the schema compliance
-    And the response body property "$.device" exists only if provided for createBooking and with the same value
+    And the response body property "$.device" exists only if provided for createBooking and always if more than one device identifier is provided, And contains a single device identifier that was included in the request
     And the response body property "$.qosProfile" has the value provided for createBooking
     And the response body property "$.startTime" has the value provided for createBooking
     And the response body property "$.duration" has the value provided for createBooking
