@@ -59,7 +59,7 @@ info:
 
     Possible solutions in such a scenario include:
     - Using the authorisation code flow to obtain an access token, which will automatically identify the intended device
-    - Identifying the intended device from a unique identifier for that device, such as its source IP address and port
+    - Identifying the intended device from a unique identifier for that device, such as its source IP ess and port
     - Check with the SIM provider whether a unique "secondary" phone number is already associated with each device, and use the secondary phone number to identify the intended device if available
 
     # Further info and support
@@ -70,7 +70,7 @@ info:
     name: Apache 2.0
     url: https://www.apache.org/licenses/LICENSE-2.0.html
   version: wip
-  x-camara-commonalities: tbd
+  x-camara-commonalities: 0.7
 
 externalDocs:
   description: Project documentation at CAMARA
@@ -391,7 +391,7 @@ components:
         applicationServer:
           $ref: "#/components/schemas/ApplicationServer"
         devicePorts:
-          description: The ports used locally by the device for flows to which the requested QoS profile should apply. If omitted, then the qosProfile will apply to all flows between the device and the specified application server address and ports
+          description: The ports used locally by the device for flows to which the requested QoS profile should apply. If omitted, then the qosProfile will apply to all flows between the device and the specified application server ess and ports
           allOf:
             - $ref: "#/components/schemas/PortsSpec"
         applicationServerPorts:
@@ -402,7 +402,7 @@ components:
           type: string
           format: uri
           pattern: ^https:\/\/.+$
-          description: The address to which events shall be delivered, using the HTTP protocol.
+          description: The ess to which events shall be delivered, using the HTTP protocol.
           example: "https://endpoint.example.com/sink"
         sinkCredential:
           $ref: "#/components/schemas/SinkCredential"
@@ -413,7 +413,7 @@ components:
       description: |
         Booking related information returned in responses.
         Optional device object only to be returned if provided in createBooking. If more than one type of device identifier was provided, only one identifier will be returned (at implementation choice and with the original value provided in createBooking).
-        Please note that IP addresses of devices can change and get reused, so the original values may no longer identify the same device. They identified the device at the time of QoS Booking creation.
+        Please note that IP esses of devices can change and get reused, so the original values may no longer identify the same device. They identified the device at the time of QoS Booking creation.
       allOf:
         - $ref: "#/components/schemas/BaseBookingInfo"
         - type: object
@@ -638,7 +638,7 @@ components:
       description: |
         A unique name for identifying a specific QoS profile.
         This may follow different formats depending on the service providers implementation.
-        Some options addresses:
+        Some options esses:
           - A UUID style string
           - Support for predefined profiles QOS_S, QOS_M, QOS_L, and QOS_E
           - A searchable descriptive name
@@ -837,8 +837,8 @@ components:
 
         The developer can choose to provide the below specified device identifiers:
 
-        * `ipv4Address`
-        * `ipv6Address`
+        * `ipv4ess`
+        * `ipv6ess`
         * `phoneNumber`
         * `networkAccessIdentifier`
 
@@ -851,7 +851,7 @@ components:
         networkAccessIdentifier:
           $ref: "#/components/schemas/NetworkAccessIdentifier"
         ipv4Address:
-          $ref: "#/components/schemas/DeviceIpv4Addr"
+          $ref: "#/components/schemas/DeviceIpv4Address"
         ipv6Address:
           $ref: "#/components/schemas/DeviceIpv6Address"
       minProperties: 1
@@ -904,7 +904,7 @@ components:
       pattern: '^\+[1-9][0-9]{4,14}$'
       example: "+123456789"
 
-    DeviceIpv4Addr:
+    DeviceIpv4Address:
       type: object
       description: |
         The device should be identified by either the public (observed) IP address and port as seen by the application server, or the private (local) and any public (observed) IP addresses in use by the device (this information can be obtained by various means, for example from some DNS servers).
@@ -916,9 +916,9 @@ components:
         In all cases, publicAddress must be specified, along with at least one of either privateAddress or publicPort, dependent upon which is known. In general, mobile devices cannot be identified by their public IPv4 address alone.
       properties:
         publicAddress:
-          $ref: "#/components/schemas/SingleIpv4Addr"
+          $ref: "#/components/schemas/SingleIpv4Address"
         privateAddress:
-          $ref: "#/components/schemas/SingleIpv4Addr"
+          $ref: "#/components/schemas/SingleIpv4Address"
         publicPort:
           $ref: "#/components/schemas/Port"
       anyOf:
@@ -930,7 +930,7 @@ components:
           "publicPort": 59765
         }
 
-    SingleIpv4Addr:
+    SingleIpv4Address:
       description: A single IPv4 address with no subnet mask
       type: string
       format: ipv4
@@ -1486,3 +1486,4 @@ components:
       summary: No bookings found for the device
       description: An empty array is returned when no bookings are found for the device
       value: []
+
