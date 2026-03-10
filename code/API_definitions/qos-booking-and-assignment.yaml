@@ -197,7 +197,7 @@ paths:
         "404":
           $ref: "#/components/responses/GenericDevice404"
         "409":
-          $ref: "#/components/responses/BookingConflict409"
+          $ref: "#/components/responses/Generic409"
         "422":
           $ref: "#/components/responses/Generic422"
         "429":
@@ -241,6 +241,8 @@ paths:
           $ref: "#/components/responses/Generic403"
         "404":
           $ref: "#/components/responses/Generic404"
+        "409":
+          $ref: "#/components/responses/Generic409"
         "429":
           $ref: "#/components/responses/Generic429"
       security:
@@ -298,6 +300,8 @@ paths:
           $ref: "#/components/responses/Generic403"
         "404":
           $ref: "#/components/responses/Generic404"
+        "409":
+          $ref: "#/components/responses/Generic409"
         "429":
           $ref: "#/components/responses/Generic429"
       security:
@@ -411,7 +415,7 @@ paths:
         "404":
           $ref: "#/components/responses/GenericDevice404"
         "409":
-          $ref: "#/components/responses/BookingConflict409"
+          $ref: "#/components/responses/Generic409"
         "422":
           $ref: "#/components/responses/Generic422"
         "429":
@@ -463,7 +467,7 @@ paths:
         "404":
           $ref: "#/components/responses/GenericDevice404"
         "409":
-          $ref: "#/components/responses/BookingConflict409"
+          $ref: "#/components/responses/Generic409"
         "422":
           $ref: "#/components/responses/Generic422"
         "429":
@@ -547,7 +551,7 @@ paths:
         "404":
           $ref: "#/components/responses/GenericDevice404"
         "409":
-          $ref: "#/components/responses/BookingConflict409"
+          $ref: "#/components/responses/Generic409"
         "422":
           $ref: "#/components/responses/Generic422"
         "429":
@@ -606,6 +610,8 @@ paths:
           $ref: "#/components/responses/Generic403"
         "404":
           $ref: "#/components/responses/GenericDevice404"
+        "409":
+          $ref: "#/components/responses/Generic409"
         "422":
           $ref: "#/components/responses/Generic422"
         "429":
@@ -1554,8 +1560,8 @@ components:
                 code: IDENTIFIER_NOT_FOUND
                 message: Device identifier not found.
 
-    BookingConflict409:
-      description: Conflict
+    Generic409:
+      description: Handle all conflict error conditions as per commonalities guidelines
       headers:
         x-correlator:
           $ref: "#/components/headers/x-correlator"
@@ -1571,11 +1577,35 @@ components:
                       - 409
                   code:
                     enum:
+                      - ABORTED
+                      - ALREADY_EXISTS
                       - CONFLICT
-          example:
-            status: 409
-            code: CONFLICT
-            message: Conflict with an existing booking for the same device.
+                      - INCOMPATIBLE_STATE
+          examples:
+            GENERIC_409_ABORTED:
+              description: Concurreny of processes of the same nature/scope
+              value:
+                status: 409
+                code: ABORTED
+                message: Concurrency conflict.
+            GENERIC_409_ALREADY_EXISTS:
+              description: Trying to create an existing resource
+              value:
+                status: 409
+                code: ALREADY_EXISTS
+                message: The resource that a client tried to create already exists.
+            GENERIC_409_CONFLICT:
+              description: Duplication of an existing resource
+              value:
+                status: 409
+                code: CONFLICT
+                message: A specified resource duplicate entry found.
+            GENERIC_409_INCOMPATIBLE_STATE:
+              description: A resource referenced in the request is in an incompatible state for the requested operation
+              value:
+                status: 409
+                code: INCOMPATIBLE_STATE
+                message: A referenced resource is in an incompatible state.
 
     Generic410:
       description: Gone
