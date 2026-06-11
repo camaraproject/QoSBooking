@@ -958,7 +958,7 @@ components:
         The current lifecycle status of the requested QoS Booking. The status can be one of the following:
         * `REQUESTED` - QoS booking has been requested but is still being processed.
         * `SCHEDULED` - QoS booking has been granted for a future start time.
-        * `ACTIVATED` - The requested QoS booking has been in effect for the device.
+        * `ACTIVATED` - The requested QoS booking has been in effect for the device. Note that the desired QoS session may not be available depending on the device’s status (e.g. if it is in flight mode, switched off, or outside the service area), even if the booking status is ‘ACTIVATED’.
         * `TERMINATED` - The requested QoS booking has been completed or deleted, and the booking is no longer active.
       type: string
       enum:
