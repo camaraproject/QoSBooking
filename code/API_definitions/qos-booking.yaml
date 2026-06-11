@@ -441,8 +441,6 @@ components:
               format: date-time
             bookingStatus:
               $ref: "#/components/schemas/BookingStatus"
-            qosStatus:
-              $ref: "#/components/schemas/QosStatus"
             statusInfo:
               $ref: "#/components/schemas/BookingStatusInfo"
           required:
@@ -695,7 +693,7 @@ components:
           org.camaraproject.qos-booking.v0.status-changed: "#/components/schemas/EventStatusChanged"
 
     EventStatusChanged:
-      description: Event to notify a QoS booking or connectivity status change
+      description: Event to notify a QoS booking status change
       allOf:
         - $ref: "#/components/schemas/CloudEvent"
         - type: object
@@ -710,7 +708,7 @@ components:
                 bookingId:
                   $ref: "#/components/schemas/BookingId"
                 status:
-                  $ref: "#/components/schemas/StatusChanged"
+                  $ref: "#/components/schemas/BookingStatusChanged"
                 statusInfo:
                   $ref: "#/components/schemas/BookingStatusInfo"
           required:
@@ -718,16 +716,20 @@ components:
 
     BookingStatusInfo:
       description: |
-        Reason for the new `bookingStatus`. Currently `statusInfo` is applicable when booking deletion is requested or `bookingStatus` is 'TERMINATED'.
+        Reason for the new `bookingStatus`. Currently `bookingStatusInfo` is applicable when booking deletion is requested or `bookingStatus` is 'TERMINATED'.
         * `DURATION_EXPIRED` - Session terminated due to requested duration expired
         * `NETWORK_TERMINATED` - Network terminated the QoS Booking
         * `DELETE_REQUESTED`- User requested the deletion of the QoS Booking
+        * `BOOKING_DECLINED`- Network declined the QoS Booking as network cannot be fulfilled
+        * `BOOKING_REVOKED`- Network revoked the QoS Booking
 
       type: string
       enum:
         - DURATION_EXPIRED
         - NETWORK_TERMINATED
         - DELETE_REQUESTED
+        - BOOKING_DECLINED
+        - BOOKING_REVOKED
 
     Area:
       description: Base schema for all areas
@@ -965,16 +967,6 @@ components:
         - ACTIVATED
         - TERMINATED
 
-    QosStatus:
-      description: |
-        The current status of the requested connectivity. The status can be one of the following:
-        * `AVAILABLE` - The requested QoS profile is currently active. Actual service connectivity is subject to the device’s actual proximity to the requested service area and signal conditions.
-        * `UNAVAILABLE` - The requested QoS profile is currently active but is unavailable, for example because the device moved significantly out of the coverage area.
-      type: string
-      enum:
-        - AVAILABLE
-        - UNAVAILABLE
-
     BookingStatusChanged:
       description: |
         Booking status change values for notification events and transitions.
@@ -984,22 +976,6 @@ components:
         - SCHEDULED
         - ACTIVATED
         - TERMINATED
-
-    QosStatusChanged:
-      description: |
-        QoS status change values for notification events and transitions.
-        These values correspond to requested connectivity availability.
-      type: string
-      enum:
-        - AVAILABLE
-        - UNAVAILABLE
-
-    StatusChanged:
-      description: |
-        Status change value for QoS booking or connectivity events. This schema may represent either a booking lifecycle change or a connectivity availability change.
-      anyOf:
-        - $ref: "#/components/schemas/BookingStatusChanged"
-        - $ref: "#/components/schemas/QosStatusChanged"
 
     ErrorInfo:
       description: Common schema for errors
@@ -1450,7 +1426,6 @@ components:
         bookingId: "3fa85f64-5717-4562-b3fc-2c963f66afa6"
         startedAt: "2024-06-01T12:00:00Z"
         bookingStatus: "ACTIVATED"
-        qosStatus: "AVAILABLE"
 
     BOOKING_TERMINATED:
       summary: QoS booking is terminated, with device not included in response
@@ -1506,7 +1481,6 @@ components:
           bookingId: "3fa85f64-5717-4562-b3fc-2c963f66afa6"
           startedAt: "2024-06-01T12:00:00Z"
           bookingStatus: "ACTIVATED"
-          qosStatus: "AVAILABLE"
 
     RETRIEVE_BOOKINGS_NO_ITEMS:
       summary: No bookings found for the device
