@@ -70,7 +70,7 @@ info:
     name: Apache 2.0
     url: https://www.apache.org/licenses/LICENSE-2.0.html
   version: wip
-  x-camara-commonalities: 0.7
+  x-camara-commonalities: 0.8
 
 externalDocs:
   description: Project documentation at CAMARA
@@ -381,6 +381,7 @@ components:
       description: Booking Identifier in UUID format
       type: string
       format: uuid
+      maxLength: 36
 
     BaseBookingInfo:
       description: Common attributes of a QoS Booking
@@ -402,6 +403,8 @@ components:
           type: string
           format: uri
           pattern: ^https:\/\/.+$
+          maxLength: 2048
+          # This is typically a relative URI. Thus, 2048 characters can be enough.
           description: The address to which events shall be delivered, using the HTTP protocol.
           example: "https://endpoint.example.com/sink"
         sinkCredential:
@@ -424,6 +427,7 @@ components:
               description: Date and time when QoS profile is scheduled to become available. It must follow [RFC 3339](https://datatracker.ietf.org/doc/html/rfc3339#section-5.6) and must have time zone.
               type: string
               format: date-time
+              maxLength: 64
             duration:
               description: |
                 Session duration in seconds. Implementations can grant the requested session duration or set a different duration from `startTime`, based on network policies or conditions.
@@ -441,6 +445,7 @@ components:
               description: Date and time when the Booking became "AVAILABLE". Not to be returned when `status` is "REQUESTED" or "SCHEDULED". It must follow [RFC 3339](https://datatracker.ietf.org/doc/html/rfc3339#section-5.6) and must have time zone.
               type: string
               format: date-time
+              maxLength: 64
             status:
               $ref: "#/components/schemas/Status"
             statusInfo:
@@ -464,6 +469,7 @@ components:
               description: Date and time when the API consumer requests the QoS profile to become available. It must follow [RFC 3339](https://datatracker.ietf.org/doc/html/rfc3339#section-5.6) and must have time zone.
               type: string
               format: date-time
+              maxLength: 64
             duration:
               description:
                 Requested session duration in seconds.  Value may be explicitly limited for the QoS profile, as specified in the Qos Profile (see qos-profile API). Implementations can grant the requested session duration or set a different duration from `startTime`, based on network policies or conditions.
@@ -525,9 +531,11 @@ components:
             identifier:
               description: The identifier might be an account or username.
               type: string
+              maxLength: 256
             secret:
               description: The secret might be a password or passphrase.
               type: string
+              maxLength: 512
 
     AccessTokenCredential:
       type: object
@@ -539,9 +547,11 @@ components:
             accessToken:
               description: REQUIRED. An access token is a token granting access to the target resource.
               type: string
+              maxLength: 4096
             accessTokenExpiresUtc:
               type: string
               format: date-time
+              maxLength: 64
               description: |
                 REQUIRED. An absolute (UTC) timestamp at which the token shall be considered expired.
                 In the case of an ACCESS_TOKEN_EXPIRED termination reason, implementation should notify the client before the expiration date.
@@ -844,6 +854,7 @@ components:
 
     ApplicationServerIpv4Address:
       type: string
+      maxLength: 15
       example: "198.51.100.0/24"
       description: |
         IPv4 address may be specified in form <address/mask> as:
@@ -853,6 +864,7 @@ components:
 
     ApplicationServerIpv6Address:
       type: string
+      maxLength: 45
       example: "2001:db8:85a3:8d3:1319:8a2e:370:7344"
       description: |
         IPv6 address may be specified in form <address/mask> as:
@@ -866,12 +878,14 @@ components:
     NetworkAccessIdentifier:
       description: A public identifier addressing a subscription in a mobile network. In 3GPP terminology, it corresponds to the GPSI formatted with the External Identifier ({Local Identifier}@{Domain Identifier}). Unlike the telephone number, the network access identifier is not subjected to portability ruling in force, and is individually managed by each operator.
       type: string
+      maxLength: 256
       example: "123456789@domain.com"
 
     PhoneNumber:
       description: A public identifier addressing a telephone subscription. In mobile networks it corresponds to the MSISDN (Mobile Station International Subscriber Directory Number). In order to be globally unique it has to be formatted in international format, according to E.164 standard, prefixed with '+'.
       type: string
       pattern: '^\+[1-9][0-9]{4,14}$'
+      maxLength: 20
       example: "+123456789"
 
     DeviceIpv4Address:
@@ -903,6 +917,7 @@ components:
     SingleIpv4Address:
       description: A single IPv4 address with no subnet mask
       type: string
+      maxLength: 15
       format: ipv4
       example: "203.0.113.0"
 
@@ -910,6 +925,7 @@ components:
       description: |
         The device should be identified by the observed IPv6 address, or by any single IPv6 address from within the subnet allocated to the device (e.g. adding ::0 to the /64 prefix).
       type: string
+      maxLength: 45
       format: ipv6
       example: 2001:db8:85a3:8d3:1319:8a2e:370:7344
 
@@ -956,9 +972,11 @@ components:
           description: HTTP response status code
         code:
           type: string
+          maxLength: 96
           description: A human-readable code to describe the error
         message:
           type: string
+          maxLength: 512
           description: A human-readable description of what the event represents
       required:
         - status
@@ -967,6 +985,7 @@ components:
 
     XCorrelator:
       type: string
+      maxLength: 256
       pattern: ^[a-zA-Z0-9-_:;.\/<>{}]{0,256}$
       example: "b4333c46-49c0-4f62-80d7-f0ef930f1c46"
 
