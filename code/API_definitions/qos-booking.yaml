@@ -437,6 +437,8 @@ components:
               type: integer
               format: int32
               minimum: 1
+              maximum: 31622400
+              # Assume 1 year
             serviceArea:
               $ref: "#/components/schemas/Area"
             bookingId:
@@ -476,6 +478,8 @@ components:
               type: integer
               format: int32
               minimum: 1
+              maximum: 31622400
+              # Assume 1 year
             serviceArea:
               $ref: "#/components/schemas/Area"
           required:
@@ -577,6 +581,7 @@ components:
     Port:
       description: TCP or UDP port number
       type: integer
+      format: int32
       minimum: 0
       maximum: 65535
 
@@ -586,10 +591,12 @@ components:
       minProperties: 1
       properties:
         ranges:
-          description: Range of TCP or UDP ports
+          description: Array of TCP or UDP port ranges
           type: array
           minItems: 1
+          maxItems: 65536
           items:
+            description: Range of TCP or UDP port
             type: object
             required:
               - from
@@ -603,6 +610,7 @@ components:
           description: Array of TCP or UDP ports
           type: array
           minItems: 1
+          maxItems: 65536
           items:
             $ref: "#/components/schemas/Port"
       example:
@@ -969,6 +977,9 @@ components:
       properties:
         status:
           type: integer
+          format: int32
+          minimum: 100
+          maximum: 599
           description: HTTP response status code
         code:
           type: string
@@ -984,6 +995,7 @@ components:
         - message
 
     XCorrelator:
+      description: Correlation id for the different services
       type: string
       maxLength: 256
       pattern: ^[a-zA-Z0-9-_:;.\/<>{}]{0,256}$
