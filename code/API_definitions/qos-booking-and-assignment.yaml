@@ -1277,8 +1277,8 @@ components:
       summary: Booking Failed
       description: QoS Booking failed, `statusInfo` has additional info. No `bookingId` will be returned.
       value:
-        totalDevices: 0
-        remainingDevices: 0
+        totalDevices: 5
+        remainingDevices: 5
         qosProfile: "QOS_MEDIA_BROADCAST"
         startTime: "2025-10-27T15:00:00.000Z"
         duration: 3600
@@ -1295,8 +1295,8 @@ components:
       summary: Booking Pending
       description: QoS Booking request is pending, `statusInfo` has additional info. No `bookingId` will be returned.
       value:
-        totalDevices: 0
-        remainingDevices: 0
+        totalDevices: 5
+        remainingDevices: 5
         qosProfile: "QOS_MEDIA_BROADCAST"
         startTime: "2025-10-27T15:00:00.000Z"
         duration: 3600
