@@ -891,7 +891,7 @@ components:
         mapping:
           org.camaraproject.qos-booking-and-assignment.v0.status-changed: "#/components/schemas/EventBookingStatusChanged"
           org.camaraproject.qos-booking-and-assignment.v0.assignment-status-changed: "#/components/schemas/EventAssignmentStatusChanged"
-    
+
     EventBookingStatusChanged:
       description: Event to notify a QoS Booking status change
       allOf:
