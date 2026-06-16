@@ -149,7 +149,7 @@ paths:
                 content:
                   application/cloudevents+json:
                     schema:
-                      $ref: "#/components/schemas/CloudEvent"
+                      $ref: "#/components/schemas/QosBookingNotificationEvent"
               responses:
                 "204":
                   description: Successful notification
@@ -357,7 +357,7 @@ paths:
                 content:
                   application/cloudevents+json:
                     schema:
-                      $ref: "#/components/schemas/CloudEvent"
+                      $ref: "#/components/schemas/QosBookingNotificationEvent"
               responses:
                 "204":
                   description: Successful notification
@@ -869,61 +869,33 @@ components:
       maxLength: 256
       pattern: "^[a-zA-Z0-9_.-]+$"
 
-    CloudEvent:
-      description: Event compliant with the CloudEvents specification
-      required:
-        - id
-        - source
-        - specversion
-        - type
-        - time
-      properties:
-        id:
-          description: Identifier of this event, that must be unique in the source context.
-          type: string
-          maxLength: 256
-        source:
-          description: Identifies the context in which an event happened in the specific Provider Implementation.
-          type: string
-          format: uri-reference
-          maxLength: 2048
-        type:
-          description: The type of the event.
-          type: string
-          maxLength: 512
-          enum:
-            - "org.camaraproject.qos-booking-and-assignment.v0.status-changed"
-            - "org.camaraproject.qos-booking-and-assignment.v0.assignment-status-changed"
-        specversion:
-          description: Version of the specification to which this event conforms (must be 1.0 if it conforms to cloudevents 1.0.2 version)
-          type: string
-          enum:
-            - "1.0"
-        datacontenttype:
-          description: 'media-type that describes the event payload encoding, must be "application/json" for CAMARA APIs'
-          type: string
-          enum:
-            - "application/json"
-        data:
-          description: Event notification details payload, which depends on the event type
-          type: object
-        time:
-          description: |
-            Timestamp of when the occurrence happened. It must follow [RFC 3339](https://datatracker.ietf.org/doc/html/rfc3339#section-5.6) and must have time zone.
-          type: string
-          format: date-time
-          maxLength: 64
+    QosBookingEventType:
+      description: Event type values for QoS Booking and Assignment notifications
+      type: string
+      enum:
+        - "org.camaraproject.qos-booking-and-assignment.v0.status-changed"
+        - "org.camaraproject.qos-booking-and-assignment.v0.assignment-status-changed"
+
+    QosBookingNotificationEvent:
+      description: |
+        API-level notification event envelope for QoS Booking and Assignment.
+        Extends the common CloudEvent base with API-specific event type constraint.
+      allOf:
+        - $ref: "../common/CAMARA_event_common.yaml#/components/schemas/CloudEvent"
+        - type: object
+          properties:
+            type:
+              $ref: "#/components/schemas/QosBookingEventType"
       discriminator:
         propertyName: "type"
         mapping:
           org.camaraproject.qos-booking-and-assignment.v0.status-changed: "#/components/schemas/EventBookingStatusChanged"
           org.camaraproject.qos-booking-and-assignment.v0.assignment-status-changed: "#/components/schemas/EventAssignmentStatusChanged"
-
-
+    
     EventBookingStatusChanged:
       description: Event to notify a QoS Booking status change
       allOf:
-        - $ref: "#/components/schemas/CloudEvent"
+        - $ref: "#/components/schemas/QosBookingNotificationEvent"
         - type: object
           properties:
             data:
@@ -945,7 +917,7 @@ components:
     EventAssignmentStatusChanged:
       description: Event to notify a Device Assignment status change
       allOf:
-        - $ref: "#/components/schemas/CloudEvent"
+        - $ref: "#/components/schemas/QosBookingNotificationEvent"
         - type: object
           properties:
             data:
