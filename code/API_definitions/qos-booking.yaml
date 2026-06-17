@@ -427,7 +427,7 @@ components:
                 Session duration in seconds. Implementations can grant the requested session duration or set a different duration from `startTime`, based on network policies or conditions.
                 - When `bookingStatus` is "REQUESTED" or "SCHEDULED", the value is the duration to be scheduled, granted by the implementation.
                 - When `bookingStatus` is "ACTIVATED", the value is the overall duration since `startedAt`.
-                - When `bookingStatus` is "TERMINATED", the value is the duration to be scheduled granted by the implementation or is the overalll duration since `startedAt` until the session was terminated, depending on the situations under which the status became "TERMINATED".
+                - When `bookingStatus` is "TERMINATED", the value is the duration to be scheduled granted by the implementation or is the overall duration since `startedAt` until the session was terminated, depending on the situations under which the status became "TERMINATED".
               type: integer
               format: int32
               minimum: 1
