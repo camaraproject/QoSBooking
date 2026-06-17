@@ -241,7 +241,7 @@ paths:
       description: |
         Release resources related to a QoS Booking.
 
-        If the notification callback is provided and the booking status was `SCHEDULED` or `ACTIVATED`, when the deletion is completed, the client will receive, in addition to the response, a `BOOKING_STATUS_CHANGED` event with
+        If the notification callback is provided and the booking status was `REQUESTED`, `SCHEDULED` or `ACTIVATED`, when the deletion is completed, the client will receive, in addition to the response, a `BOOKING_STATUS_CHANGED` event with
         - `bookingStatus` as `TERMINATED` and
         - `statusInfo` as `DELETE_REQUESTED`
         There will be no notification event if the `bookingStatus` was already `TERMINATED`.
