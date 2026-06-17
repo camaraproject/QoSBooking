@@ -236,7 +236,6 @@ paths:
           $ref: "#/components/responses/Generic403"
         "404":
           $ref: "#/components/responses/Generic404"
-        "409":
           $ref: "#/components/responses/Generic409"
         "429":
           $ref: "#/components/responses/Generic429"
