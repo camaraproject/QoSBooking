@@ -703,7 +703,7 @@ components:
               description: Event details depending on the event type
               required:
                 - bookingId
-                - status
+                - bookingStatus
               properties:
                 bookingId:
                   $ref: "#/components/schemas/BookingId"
