@@ -716,7 +716,7 @@ components:
 
     BookingStatusInfo:
       description: |
-        Reason for the new `bookingStatus`. Currently `bookingStatusInfo` is applicable when booking deletion is requested or `bookingStatus` is 'TERMINATED'.
+        Reason for the new `bookingStatus`. Currently `statusInfo` is applicable when booking deletion is requested or `bookingStatus` is 'TERMINATED'.
         * `DURATION_EXPIRED` - Session terminated due to requested duration expired
         * `NETWORK_TERMINATED` - Network terminated the QoS Booking
         * `DELETE_REQUESTED`- User requested the deletion of the QoS Booking
