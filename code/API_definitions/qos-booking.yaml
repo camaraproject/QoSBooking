@@ -261,7 +261,7 @@ paths:
             x-correlator:
               $ref: "#/components/headers/x-correlator"
         "202":
-          description: Deletion request accepted to be processed. It applies for an asynchronous deletion process. Due to asynchronous nature, `bookingStatus` in the response will be `SCHEDULED` or `ACTIVATED` with `statusInfo` set to `DELETE_REQUESTED`.
+          description: Deletion request accepted to be processed. It applies for an asynchronous deletion process. Due to asynchronous nature, `bookingStatus` in the response will be `REQUESTED' , `SCHEDULED` or `ACTIVATED` with `statusInfo` set to `DELETE_REQUESTED`.
           headers:
             x-correlator:
               $ref: "#/components/headers/x-correlator"
