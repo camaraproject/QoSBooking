@@ -448,7 +448,6 @@ paths:
           $ref: "#/components/responses/Generic403"
         "404":
           $ref: "#/components/responses/GenericDevice404"
-        "409":
           $ref: "#/components/responses/Generic409"
         "422":
           $ref: "#/components/responses/Generic422"
