@@ -97,7 +97,7 @@ paths:
 
         - If the booking is completed synchronously, the response will be 201 with `bookingStatus` = `SCHEDULED`.
         - If the booking request is accepted but not yet completed, the response will be 201 with `bookingStatus` = `REQUESTED`.
-        - If the operator determines synchronously that the booking request cannot be fulfilled, the response will be 201 with `bookingStatus` = `TERMINATED`.
+        - If the operator determines synchronously that the booking request cannot be fulfilled, the response will be 201 with `bookingStatus` = `TERMINATED` and `statusInfo` = `BOOKING_DECLINED`.
 
         - If the request includes a notification callback, the client will receive a `status-changed` event with the outcome of the process. The event will be sent also for synchronous operations.
 
