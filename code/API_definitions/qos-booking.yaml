@@ -95,14 +95,14 @@ paths:
       description: |
         Triggers a new booking to assign certain QoS Profile to certain device.
 
-        - If the booking is completed synchronously, the response will be 201 with `status` = `SCHEDULED`.
-        - If the booking request is accepted but not yet completed, the response will be 201 with `status` = `REQUESTED`.
-        - If the operator determines synchronously that the booking request cannot be fulfilled, the response will be 201 with `status` = `UNAVAILABLE`.
+        - If the booking is completed synchronously, the response will be 201 with `bookingStatus` = `SCHEDULED`.
+        - If the booking request is accepted but not yet completed, the response will be 201 with `bookingStatus` = `REQUESTED`.
+        - If the operator determines synchronously that the booking request cannot be fulfilled, the response will be 201 with `bookingStatus` = `TERMINATED` and `statusInfo` = `BOOKING_DECLINED`.
 
         - If the request includes a notification callback, the client will receive a `status-changed` event with the outcome of the process. The event will be sent also for synchronous operations.
 
         **NOTES:**
-        - When the booking status becomes `UNAVAILABLE`, the QoS Booking resource is not immediately released, but will get deleted automatically, at earliest 360 seconds after.
+        - When the booking status becomes `TERMINATED`, the QoS Booking resource is not immediately released, but will get deleted automatically, at earliest 360 seconds after.
 
         This behavior allows clients which are not receiving notification events but are polling, to get the booking status information.
         - The access token may be either 2-legged or 3-legged. See "Identifying the device from the access token" for further information
@@ -168,10 +168,8 @@ paths:
               schema:
                 $ref: "#/components/schemas/BookingInfo"
               examples:
-                BOOKING_AVAILABLE_WITH_DEVICE_RESPONSE:
-                  $ref: "#/components/examples/BOOKING_AVAILABLE_WITH_DEVICE_RESPONSE"
-                BOOKING_UNAVAILABLE:
-                  $ref: "#/components/examples/BOOKING_UNAVAILABLE"
+                BOOKING_ACTIVATED_WITH_DEVICE_RESPONSE:
+                  $ref: "#/components/examples/BOOKING_ACTIVATED_WITH_DEVICE_RESPONSE"
         "400":
           $ref: "#/components/responses/CreateBooking400"
         "401":
@@ -218,10 +216,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BookingInfo"
               examples:
-                BOOKING_AVAILABLE_WITH_DEVICE_RESPONSE:
-                  $ref: "#/components/examples/BOOKING_AVAILABLE_WITH_DEVICE_RESPONSE"
-                BOOKING_UNAVAILABLE:
-                  $ref: "#/components/examples/BOOKING_UNAVAILABLE"
+                BOOKING_ACTIVATED_WITH_DEVICE_RESPONSE:
+                  $ref: "#/components/examples/BOOKING_ACTIVATED_WITH_DEVICE_RESPONSE"
+                BOOKING_TERMINATED:
+                  $ref: "#/components/examples/BOOKING_TERMINATED"
         "400":
           $ref: "#/components/responses/Generic400"
         "401":
@@ -243,10 +241,10 @@ paths:
       description: |
         Release resources related to a QoS Booking.
 
-        If the notification callback is provided and the booking status was `SCHEDULED` or `AVAILABLE`, when the deletion is completed, the client will receive, in addition to the response, a `BOOKING_STATUS_CHANGED` event with
-        - `status` as `UNAVAILABLE` and
+        If the notification callback is provided and the booking status was `REQUESTED`, `SCHEDULED` or `ACTIVATED`, when the deletion is completed, the client will receive, in addition to the response, a `BOOKING_STATUS_CHANGED` event with
+        - `bookingStatus` as `TERMINATED` and
         - `statusInfo` as `DELETE_REQUESTED`
-        There will be no notification event if the `status` was already `UNAVAILABLE`.
+        There will be no notification event if the `bookingStatus` was already `TERMINATED`.
 
         **NOTES:**
         - The access token may be either 2-legged or 3-legged.
@@ -263,7 +261,7 @@ paths:
             x-correlator:
               $ref: "#/components/headers/x-correlator"
         "202":
-          description: Deletion request accepted to be processed. It applies for an async deletion process. `status` in the response will be `SCHEDULED` or `AVAILABLE` with `statusInfo` set to `DELETE_REQUESTED`.
+          description: Deletion request accepted to be processed. It applies for an asynchronous deletion process. Due to asynchronous nature, `bookingStatus` in the response will be `REQUESTED' , `SCHEDULED` or `ACTIVATED` with `statusInfo` set to `DELETE_REQUESTED`.
           headers:
             x-correlator:
               $ref: "#/components/headers/x-correlator"
@@ -427,9 +425,9 @@ components:
             duration:
               description: |
                 Session duration in seconds. Implementations can grant the requested session duration or set a different duration from `startTime`, based on network policies or conditions.
-                - When `qosStatus` is "REQUESTED" or "SCHEDULED", the value is the duration to be scheduled, granted by the implementation.
-                - When `qosStatus` is "AVAILABLE", the value is the overall duration since `startedAt`.
-                - When `qosStatus` is "UNAVAILABLE", the value is the overall effective duration since `startedAt` until the session was terminated.
+                - When `bookingStatus` is "REQUESTED" or "SCHEDULED", the value is the duration to be scheduled, granted by the implementation.
+                - When `bookingStatus` is "ACTIVATED", the value is the overall duration since `startedAt`.
+                - When `bookingStatus` is "TERMINATED", the value is the duration to be scheduled granted by the implementation or is the overall duration since `startedAt` until the session was terminated, depending on the situations under which the status became "TERMINATED".
               type: integer
               format: int32
               minimum: 1
@@ -438,16 +436,16 @@ components:
             bookingId:
               $ref: "#/components/schemas/BookingId"
             startedAt:
-              description: Date and time when the Booking became "AVAILABLE". Not to be returned when `status` is "REQUESTED" or "SCHEDULED". It must follow [RFC 3339](https://datatracker.ietf.org/doc/html/rfc3339#section-5.6) and must have time zone.
+              description: Date and time when the Booking became "ACTIVATED". Not to be returned when `bookingStatus` is "REQUESTED" or "SCHEDULED". It must follow [RFC 3339](https://datatracker.ietf.org/doc/html/rfc3339#section-5.6) and must have time zone.
               type: string
               format: date-time
-            status:
-              $ref: "#/components/schemas/Status"
+            bookingStatus:
+              $ref: "#/components/schemas/BookingStatus"
             statusInfo:
-              $ref: "#/components/schemas/StatusInfo"
+              $ref: "#/components/schemas/BookingStatusInfo"
           required:
             - bookingId
-            - status
+            - bookingStatus
             - startTime
             - duration
             - serviceArea
@@ -695,7 +693,7 @@ components:
           org.camaraproject.qos-booking.v0.status-changed: "#/components/schemas/EventStatusChanged"
 
     EventStatusChanged:
-      description: Event to notify a QoS Booking status change
+      description: Event to notify a QoS booking status change
       allOf:
         - $ref: "#/components/schemas/CloudEvent"
         - type: object
@@ -705,29 +703,33 @@ components:
               description: Event details depending on the event type
               required:
                 - bookingId
-                - status
+                - bookingStatus
               properties:
                 bookingId:
                   $ref: "#/components/schemas/BookingId"
-                status:
-                  $ref: "#/components/schemas/StatusChanged"
+                bookingStatus:
+                  $ref: "#/components/schemas/BookingStatusChanged"
                 statusInfo:
-                  $ref: "#/components/schemas/StatusInfo"
+                  $ref: "#/components/schemas/BookingStatusInfo"
           required:
             - data
 
-    StatusInfo:
+    BookingStatusInfo:
       description: |
-        Reason for the new `status`. Currently `statusInfo` is only applicable when `status` is 'UNAVAILABLE'.
+        Reason for the new `bookingStatus`. Currently `statusInfo` is applicable when booking deletion is requested or `bookingStatus` is 'TERMINATED'.
         * `DURATION_EXPIRED` - Session terminated due to requested duration expired
         * `NETWORK_TERMINATED` - Network terminated the QoS Booking
         * `DELETE_REQUESTED`- User requested the deletion of the QoS Booking
+        * `BOOKING_DECLINED`- Network declined the QoS Booking as network cannot be fulfilled
+        * `BOOKING_REVOKED`- Network revoked the QoS Booking
 
       type: string
       enum:
         - DURATION_EXPIRED
         - NETWORK_TERMINATED
         - DELETE_REQUESTED
+        - BOOKING_DECLINED
+        - BOOKING_REVOKED
 
     Area:
       description: Base schema for all areas
@@ -951,31 +953,29 @@ components:
         - $ref: "#/components/schemas/Device"
         - maxProperties: 1
 
-    Status:
+    BookingStatus:
       description: |
-        The current status of the requested QoS Booking. The status can be one of the following:
+        The current lifecycle status of the requested QoS Booking. The status can be one of the following:
         * `REQUESTED` - QoS booking has been requested but is still being processed.
         * `SCHEDULED` - QoS booking has been granted for a future start time.
-        * `AVAILABLE` - The requested QoS profile has been activated for the device.
-        * `UNAVAILABLE` - The QoS booking request has been processed but is not scheduled or active. `statusInfo` may provide additional information about the reason for the unavailability.
+        * `ACTIVATED` - The requested QoS booking has been in effect for the device. Note that the desired QoS session may not be available depending on the device’s status (e.g. if it is in flight mode, switched off, or outside the service area), even if the booking status is ‘ACTIVATED’.
+        * `TERMINATED` - The requested QoS booking has been completed or deleted, and the booking is no longer active.
       type: string
       enum:
         - REQUESTED
         - SCHEDULED
-        - AVAILABLE
-        - UNAVAILABLE
+        - ACTIVATED
+        - TERMINATED
 
-    StatusChanged:
+    BookingStatusChanged:
       description: |
-        The current status of a requested, scheduled or previously available QoS Booking. Applicable values in the event are:
-        * `SCHEDULED` - QoS booking has been granted for a future start time.
-        *  `AVAILABLE` - The requested QoS profile has been activated for the device.
-        *  `UNAVAILABLE` - The QoS booking request has been processed but is not scheduled or active. `statusInfo` may provide additional information about the reason for the unavailability.
+        Booking status change values for notification events and transitions.
+        These values correspond to the booking lifecycle states after a request has been processed.
       type: string
       enum:
         - SCHEDULED
-        - AVAILABLE
-        - UNAVAILABLE
+        - ACTIVATED
+        - TERMINATED
 
     ErrorInfo:
       description: Common schema for errors
@@ -1405,9 +1405,9 @@ components:
                 message: Rate limit reached.
 
   examples:
-    BOOKING_AVAILABLE_WITH_DEVICE_RESPONSE:
-      summary: QoS booking status is available, with device included in response
-      description: QoS booking info when status is available, and request used a 2-legged access token with multiple device identifiers, or possibly only a single device identifier
+    BOOKING_ACTIVATED_WITH_DEVICE_RESPONSE:
+      summary: QoS booking status is activated, with device included in response
+      description: QoS booking info when booking status is activated, and request used a 2-legged access token with multiple device identifiers, or possibly only a single device identifier
       value:
         qosProfile: "QOS_L"
         sink: "https://application-server.com/notifications"
@@ -1425,11 +1425,11 @@ components:
           radius: 100
         bookingId: "3fa85f64-5717-4562-b3fc-2c963f66afa6"
         startedAt: "2024-06-01T12:00:00Z"
-        status: "AVAILABLE"
+        bookingStatus: "ACTIVATED"
 
-    BOOKING_UNAVAILABLE:
-      summary: QoS booking is unavailable, with device not included in response
-      description: QoS booking info when status is unavailable due to network termination. Request used a 3-legged access token, or possibly a single device identifier
+    BOOKING_TERMINATED:
+      summary: QoS booking is terminated, with device not included in response
+      description: QoS booking info when booking status is terminated due to network termination. Request used a 3-legged access token, or possibly a single device identifier
       value:
         qosProfile: "Acme2"
         sink: "https://application-server.com/notifications"
@@ -1443,12 +1443,12 @@ components:
           radius: 100
         bookingId: "3fa85f64-5717-4562-b3fc-2c963f66afa6"
         startedAt: "2024-06-01T12:00:00Z"
-        status: "UNAVAILABLE"
+        bookingStatus: "TERMINATED"
         statusInfo: "NETWORK_TERMINATED"
 
     BOOKING_STATUS_CHANGED_EXAMPLE:
-      summary: Booking status changed
-      description: Cloud event example for status change to UNAVAILABLE due to DURATION_EXPIRED
+      summary: QoS booking status changed
+      description: Cloud event example for booking status change to TERMINATED due to DURATION_EXPIRED
       value:
         id: "83a0d986-0866-4f38-b8c0-fc65bfcda452"
         source: "https://api.example.com/qod/v1/sessions/123e4567-e89b-12d3-a456-426614174000"
@@ -1457,12 +1457,12 @@ components:
         time: "2024-06-01T13:00:00Z"
         data:
           bookingId: "123e4567-e89b-12d3-a456-426614174000"
-          status: "UNAVAILABLE"
+          bookingStatus: "TERMINATED"
           statusInfo: "DURATION_EXPIRED"
 
     RETRIEVE_BOOKINGS_ONE_ITEM:
-      summary: List of QoS sessions for the device
-      description: A single QoS session for the device is available
+      summary: List of QoS booking for the device
+      description: A single QoS booking for the device is activated
       value:
         - qosProfile: "QOS_L"
           applicationServer:
@@ -1480,7 +1480,7 @@ components:
             radius: 100
           bookingId: "3fa85f64-5717-4562-b3fc-2c963f66afa6"
           startedAt: "2024-06-01T12:00:00Z"
-          status: "AVAILABLE"
+          bookingStatus: "ACTIVATED"
 
     RETRIEVE_BOOKINGS_NO_ITEMS:
       summary: No bookings found for the device
