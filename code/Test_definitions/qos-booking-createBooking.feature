@@ -47,19 +47,14 @@ Feature: CAMARA QoS Booking API, vwip - Operation createBooking
       | $.device                 | exists only if provided in the request body and contains only one of the identifier values in the request |
       | $.qosProfile             | same value as in the request body                                                                         |
       | $.startTime              | is in the future                                                                                          |
-      | $.status                 | is "REQUESTED", "SCHEDULED" or "UNAVAILABLE"                                                              |
-      | $.statusInfo             | only exists if "$.status" = "UNAVAILABLE", and value is "NETWORK_TERMINATED"                              |
+      | $.bookingStatus          | is "REQUESTED", "SCHEDULED" or "TERMINATED"                                                               |
+      | $.statusInfo             | only exists if "$.bookingStatus" = "TERMINATED", and value is "BOOKING_DECLINED"                          |
+      | $.serviceArea            | same value as in the request body                                                                         |
       | $.devicePorts            | exists only if provided in the request body and with the same value                                       |
       | $.applicationServerPorts | exists only if provided in the request body and with the same value                                       |
       | $.sink                   | exists only if provided in the request body and with the same value                                       |
-
-    # Open questions:
-    # serviceArea has to have same value as in the request body or implementations can make adjustments
-    # startTime has to have same value as in the request body or implementations can make adjustments, to be returned when status = UNAVAILABLE?
-    # duration to be returned when when status = UNAVAILABLE?
-    # bookingId to be returned when when status = UNAVAILABLE?
-    # statusInfo should have another value when status = UNAVAILABLE after creation, e.g. BOOKING_CANNOT_BE_FULFILLED or open string
-    # sinkCredential may be returned in the response in any case or it should be removed for security
+      | $.sinkCredential         | does not exist in the response                                                                            |
+    # Note: serviceArea equality agreed in CQM meeting 2026-02-06; a corresponding API spec update is pending
 
   @qos_booking_createBooking_02_no_device_in_response
   Scenario: Device is not returned if not included in the creation
@@ -85,6 +80,27 @@ Feature: CAMARA QoS Booking API, vwip - Operation createBooking
     And the response body complies with the OAS schema at "/components/schemas/BookingInfo"
     And the response property "$.device" includes only one device
 
+  @qos_booking_createBooking_04_0_booking_declined_synchronously
+  Scenario: Network declines the booking synchronously at creation
+    Given a valid testing device supported by the service, identified by the token or provided in the request body
+    And the request property "$.qosProfile" is set to a valid QoS Profile
+    And the request property "$.startTime" is set to a valid value in the future compliant with the service restrictions
+    And the request property "$.duration" is set to a valid duration for the selected QoS profile
+    And the request property "$.serviceArea" is set to a valid value compliant with the service restrictions
+    And the operator cannot fulfil the booking at the time of creation
+    When the request "createBooking" is sent
+    Then the response status code is 201
+    And the response header "Content-Type" is "application/json"
+    And the response header "x-correlator" has the same value as the request header "x-correlator"
+    And the response body complies with the OAS schema at "/components/schemas/BookingInfo"
+    And the response property "$.bookingStatus" is "TERMINATED"
+    And the response property "$.statusInfo" is "BOOKING_DECLINED"
+    And the response property "$.bookingId" exists
+    And the response property "$.startTime" exists
+    And the response property "$.duration" exists
+    And the response property "$.serviceArea" has the same value as in the request
+    And the response property "$.sinkCredential" does not exist
+
   # Lifecycle of a successful booking
 
   @qos_booking_createBooking_04_1_sinkcredential_provided
@@ -100,14 +116,15 @@ Feature: CAMARA QoS Booking API, vwip - Operation createBooking
     And the response header "Content-Type" is "application/json"
     And the response header "x-correlator" has the same value as the request header "x-correlator"
     And the response property "$.sink" has the same value as in the request
-    And the response property "$.status" is set to "REQUESTED" or "SCHEDULED"
+    And the response property "$.bookingStatus" is set to "REQUESTED" or "SCHEDULED"
+    And the response property "$.sinkCredential" does not exist
 
   # This step is optional, for cases when implementation did not grant the booking synchronously
   @qos_booking_createBooking_04_2_event_received_scheduled
   Scenario: Event is received when a booking status changes from requested to scheduled
-    Given a QoS booking was created successfully with status = "REQUESTED" and includes a valid sink and sinkCredentials
+    Given a QoS booking was created successfully with bookingStatus = "REQUESTED" and includes a valid sink and sinkCredentials
     And the time value of "createBooking" request property "$.sinkCredential.accessTokenExpiresUtc" has not been reached
-    When the status of the booking becomes scheduled
+    When the bookingStatus of the booking becomes SCHEDULED
     Then an event is received at the address of the request property "$.sink"
     And the event header "Authorization" is set to "Bearer " + the value of the request property "$.sinkCredential.accessToken"
     And the event header "Content-Type" is set to "application/cloudevents+json"
@@ -115,15 +132,15 @@ Feature: CAMARA QoS Booking API, vwip - Operation createBooking
     And the event body property "$.id" is unique
     And the event body property "$.type" is set to "org.camaraproject.qos-booking.v0.status-changed"
     And the event body property "$.data.bookingId" has the same value as createBooking response property "$.bookingId"
-    And the event body property "$.data.status" is "SCHEDULED"
+    And the event body property "$.data.bookingStatus" is "SCHEDULED"
     And the event body property "$.data.statusInfo" is not included
 
-  @qos_booking_createBooking_04_3_event_received_available
-  Scenario: Event is received when a booking status changes from scheduled to available
-    Given a QoS booking is already in status "SCHEDULED" and includes a valid sink and sinkCredentials
+  @qos_booking_createBooking_04_3_event_received_activated
+  Scenario: Event is received when a booking status changes from SCHEDULED to ACTIVATED
+    Given a QoS booking is already in bookingStatus "SCHEDULED" and includes a valid sink and sinkCredentials
     And the time value of "createBooking" request property "$.sinkCredential.accessTokenExpiresUtc" has not been reached
     When the time value of "createBooking" response property "$.startTime" is reached
-    And the status of the booking becomes available
+    And the bookingStatus of the booking becomes ACTIVATED
     Then an event is received at the address of the request property "$.sink"
     And the event header "Authorization" is set to "Bearer " + the value of the request property "$.sinkCredential.accessToken"
     And the event header "Content-Type" is set to "application/cloudevents+json"
@@ -131,15 +148,15 @@ Feature: CAMARA QoS Booking API, vwip - Operation createBooking
     And the event body property "$.id" is unique
     And the event body property "$.type" is set to "org.camaraproject.qos-booking.v0.status-changed"
     And the event body property "$.data.bookingId" has the same value as createBooking response property "$.bookingId"
-    And the event body property "$.data.status" is "AVAILABLE"
+    And the event body property "$.data.bookingStatus" is "ACTIVATED"
     And the event body property "$.data.statusInfo" is not included
 
-  @qos_booking_createBooking_04_4_event_received_unavailable_duration_expired
-  Scenario: Event is received when a booking status changes from available to unavailable after the duration expires
-    Given a QoS booking is already in status "AVAILABLE" and includes a valid sink and sinkCredentials
+  @qos_booking_createBooking_04_4_event_received_terminated_duration_expired
+  Scenario: Event is received when a booking status changes from ACTIVATED to TERMINATED after the duration expires
+    Given a QoS booking is already in bookingStatus "ACTIVATED" and includes a valid sink and sinkCredentials
     And the time value of "createBooking" request property "$.sinkCredential.accessTokenExpiresUtc" has not been reached
     When the time value of "createBooking" response property "$.startTime" + the interval value of response property "$.duration" is reached
-    And the status of the booking becomes unavailable
+    And the bookingStatus of the booking becomes TERMINATED
     Then an event is received at the address of the request property "$.sink"
     And the event header "Authorization" is set to "Bearer " + the value of the request property "$.sinkCredential.accessToken"
     And the event header "Content-Type" is set to "application/cloudevents+json"
@@ -147,13 +164,13 @@ Feature: CAMARA QoS Booking API, vwip - Operation createBooking
     And the event body property "$.id" is unique
     And the event body property "$.type" is set to "org.camaraproject.qos-booking.v0.status-changed"
     And the event body property "$.data.bookingId" has the same value as createBooking response property "$.bookingId"
-    And the event body property "$.data.status" is "UNAVAILABLE"
+    And the event body property "$.data.bookingStatus" is "TERMINATED"
     And the event body property "$.data.statusInfo" is set to "DURATION_EXPIRED"
 
   # This step is optional, for cases when the implementation terminated the booked session before the scheduled duration
-  @qos_booking_createBooking_04_5_event_received_unavailable_network_terminated
-  Scenario: Event is received when a booking status changes from available to unavailable before the scheduled duration expires
-    Given a QoS booking is already in status "AVAILABLE" and includes a valid sink and sinkCredentials
+  @qos_booking_createBooking_04_5_event_received_terminated_network_terminated
+  Scenario: Event is received when a booking status changes from ACTIVATED to TERMINATED before the scheduled duration expires
+    Given a QoS booking is already in bookingStatus "ACTIVATED" and includes a valid sink and sinkCredentials
     And the time value of "createBooking" request property "$.sinkCredential.accessTokenExpiresUtc" has not been reached
     And  the time value of "createBooking" response property "$.startTime" + the interval value of response property "$.duration" has not been reached
     When the booked session is terminated by the operator
@@ -164,15 +181,15 @@ Feature: CAMARA QoS Booking API, vwip - Operation createBooking
     And the event body property "$.id" is unique
     And the event body property "$.type" is set to "org.camaraproject.qos-booking.v0.status-changed"
     And the event body property "$.data.bookingId" has the same value as createBooking response property "$.bookingId"
-    And the event body property "$.data.status" is "UNAVAILABLE"
+    And the event body property "$.data.bookingStatus" is "TERMINATED"
     And the event body property "$.data.statusInfo" is set to "NETWORK_TERMINATED"
 
-  # This step is optional, for cases when the implementation did not grant the booking synchronously and later rejects the booking
-  # or when it was granted (SCHEDULED) but implementation decides to revoke it before the start
-  # TBD if a better status or statusInfo is specified for this use case, e.g. status = "REJECTED" or status = "UNAVAILABLE" + statusInfo = "NOT_SCHEDULED" or "REVOKED"
-  @qos_booking_createBooking_04_6_event_received_unavailable_network_terminated
-  Scenario: Event is received when a booking status changes from requested to unavailable
-    Given a QoS booking was created successfully and its status = "REQUESTED" or "SCHEDULED", and includes a valid sink and sinkCredentials
+  # This step is optional, for cases when the implementation did not grant the booking synchronously and later rejects it,
+  # or when it was granted (SCHEDULED) but the implementation decides to revoke it before the start.
+  # bookingStatus = "TERMINATED" and statusInfo = "BOOKING_REVOKED"
+  @qos_booking_createBooking_04_6_event_received_terminated_booking_revoked
+  Scenario: Event is received when a booking in bookingStatus REQUESTED or SCHEDULED is revoked by the operator
+    Given a QoS booking was created successfully and its bookingStatus = "REQUESTED" or "SCHEDULED", and includes a valid sink and sinkCredentials
     And the time value of "createBooking" request property "$.sinkCredential.accessTokenExpiresUtc" has not been reached
     When the operator decides that the booking cannot be granted
     Then an event is received at the address of the request property "$.sink"
@@ -182,8 +199,8 @@ Feature: CAMARA QoS Booking API, vwip - Operation createBooking
     And the event body property "$.id" is unique
     And the event body property "$.type" is set to "org.camaraproject.qos-booking.v0.status-changed"
     And the event body property "$.data.bookingId" has the same value as createBooking response property "$.bookingId"
-    And the event body property "$.data.status" is "UNAVAILABLE"
-    And the event body property "$.data.statusInfo" is set to "NETWORK_TERMINATED"
+    And the event body property "$.data.bookingStatus" is "TERMINATED"
+    And the event body property "$.data.statusInfo" is set to "BOOKING_REVOKED"
 
   # Response 400
 

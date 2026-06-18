@@ -6,10 +6,10 @@ Feature: CAMARA QoS Booking API, vwip - Operation deleteBooking
   #
   # Testing assets:
   # * The bookingId of any existing booking.
-  # * The bookingId of an existing booking with status "REQUESTED", and with provided values for "sink" and "sinkCredential".
-  # * The bookingId of an existing booking with status "SCHEDULED", and with provided values for "sink" and "sinkCredential".
-  # * The bookingId of an existing booking with status "AVAILABLE", and with provided values for "sink" and "sinkCredential".
-  # * The bookingId of an existing booking with status "UNAVAILABLE", and with provided values for "sink" and "sinkCredential".
+  # * The bookingId of an existing booking with bookingStatus "REQUESTED", and with provided values for "sink" and "sinkCredential".
+  # * The bookingId of an existing booking with bookingStatus "SCHEDULED", and with provided values for "sink" and "sinkCredential".
+  # * The bookingId of an existing booking with bookingStatus "ACTIVATED", and with provided values for "sink" and "sinkCredential".
+  # * The bookingId of an existing booking with bookingStatus "TERMINATED", and with provided values for "sink" and "sinkCredential".
   #
   # References to OAS spec schemas refer to schemas specified in qos-booking.yaml
 
@@ -23,11 +23,11 @@ Feature: CAMARA QoS Booking API, vwip - Operation deleteBooking
 
   # Response 202
 
-  # From the current spec it is assumed that only booking in status "SCHEDULED" or "AVAILABLE" may be asynchronously deleted
-  # If booking is in status "REQUESTED" or "UNAVAILABLE", a synchronous deletion is expected
+  # Per spec, bookings in bookingStatus "REQUESTED", "SCHEDULED" or "ACTIVATED" are deleted asynchronously (202 response)
+  # A booking in bookingStatus "TERMINATED" is deleted synchronously (204 response)
   @qos_booking_deleteBooking_202_async_delete_existing_qos_booking
   Scenario Outline: Delete an existing QoS booking (async deletion process)
-    Given an existing QoS booking created by operation createBooking in status "SCHEDULED" or "AVAILABLE"
+    Given an existing QoS booking created by operation createBooking in bookingStatus "REQUESTED", "SCHEDULED" or "ACTIVATED"
     And the deletion process for that QoS booking in the implementation is asynchronous
     And the path parameter "bookingId" is set to the value for that QoS booking
     When the request "deleteBooking" is sent
@@ -45,11 +45,11 @@ Feature: CAMARA QoS Booking API, vwip - Operation deleteBooking
       | "$.qosProfile"             | has the value provided for createBooking                              |
       | "$.devicePorts"            | exists only if provided for createBooking and with the same value     |
       | "$.applicationServerPorts" | exists only if provided for createBooking and with the same value     |
-      | "$.sink"                   | exists only if provided for createBooking and with the same value     |
-      # sinkCredential not explicitly mentioned to be returned if present, as this is debatable for security concerns
-      | "$.status"                 | is "SCHEDULED" or "AVAILABLE"                                         |
-      | "$.startedAt"              | exists only if "$.status" is "AVAILABLE" and the value is in the past |
-      | "$.statusInfo"             | is "DELETE_REQUESTED"                                                 |
+      | "$.sink"                   | exists only if provided for createBooking and with the same value                |
+      | "$.sinkCredential"         | does not exist in the response                                                   |
+      | "$.bookingStatus"          | is "REQUESTED", "SCHEDULED" or "ACTIVATED"                                       |
+      | "$.startedAt"              | exists only if "$.bookingStatus" is "ACTIVATED" and the value is in the past     |
+      | "$.statusInfo"             | is "DELETE_REQUESTED"                                                            |
 
   # Response 204
 
@@ -63,10 +63,10 @@ Feature: CAMARA QoS Booking API, vwip - Operation deleteBooking
     And the response header "x-correlator" has same value as the request header "x-correlator"
 
   @qos_booking_deleteBooking_02_event_notification
-  Scenario: Event is received if the booking was SCHEDULED or AVAILABLE and sink was provided
-    Given an existing QoS booking created by operation createBooking with provided values for "sink" and "sinkCredential", and with status "AVAILABLE" or "SCHEDULED"
+  Scenario: Event is received if the booking was REQUESTED, SCHEDULED or ACTIVATED and sink was provided
+    Given an existing QoS booking created by operation createBooking with provided values for "sink" and "sinkCredential", and with bookingStatus "REQUESTED", "ACTIVATED" or "SCHEDULED"
     And the path parameter "bookingId" is set to the value for that QoS booking
-    When QoS booking status changes to "UNAVAILABLE"
+    When QoS booking bookingStatus changes to "TERMINATED"
     Then an event is received at the address of the "$.sink" provided for createBooking
     And the event header "Authorization" is set to "Bearer " + the value of the property "$.sinkCredential.accessToken" provided for createBooking
     And the event header "Content-Type" is set to "application/cloudevents+json"
@@ -74,7 +74,7 @@ Feature: CAMARA QoS Booking API, vwip - Operation deleteBooking
     And the event body property "$.id" is unique
     And the event body property "$.type" is set to "org.camaraproject.qos-booking.v0.status-changed"
     And the event body property "$.data.bookingId" has the same value as createBooking response property "$.bookingId"
-    And the event body property "$.data.status" is "UNAVAILABLE"
+    And the event body property "$.data.bookingStatus" is "TERMINATED"
     And the event body property "$.data.statusInfo" is set to "DELETE_REQUESTED"
 
   # Response 400

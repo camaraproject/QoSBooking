@@ -40,9 +40,9 @@ Feature: CAMARA QoS Booking API, vwip - Operation retrieveBookingByDevice
     And in all items in the response, property "devicePorts" exists only if provided for createBooking and with the same value
     And in all items in the response, property "applicationServerPorts" exists only if provided for createBooking and with the same value
     And in all items in the response, property "sink" exists only if provided for createBooking and with the same value
-    # sinkCredential not explicitly mentioned to be returned if present, as this is debatable for security concerns
-    And in all items in the response, property "startedAt" exists only if "status" is "AVAILABLE" and the value is in the past
-    And in all items in the response, property "statusInfo" exists only if "status" is "UNAVAILABLE"
+    And in all items in the response, property "sinkCredential" does not exist
+    And in all items in the response, property "startedAt" exists only if "bookingStatus" is "ACTIVATED" and the value is in the past
+    And in all items in the response, property "statusInfo" exists only if "bookingStatus" is "TERMINATED" or "statusInfo" is "DELETE_REQUESTED"
 
   @qos_booking_retrieveBookingByDevice_02_bookings_not_found
   Scenario: Device has no QoS bookings

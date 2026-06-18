@@ -35,20 +35,20 @@ Feature: CAMARA QoS Booking API, vwip - Operation getBookingById
     And the response property "$.devicePorts" exists only if provided for createBooking and with the same value
     And the response property "$.applicationServerPorts" exists only if provided for createBooking and with the same value
     And the response property "$.sink" exists only if provided for createBooking and with the same value
-    # sinkCredential not explicitly mentioned to be returned if present, as this is debatable for security concerns
-    And the response property "$.startedAt" exists only if "$.status" is "AVAILABLE" and the value is in the past
-    And the response property "$.statusInfo" exists only if "$.status" is "UNAVAILABLE"
+    And the response property "$.sinkCredential" does not exist
+    And the response property "$.startedAt" exists only if "$.bookingStatus" is "ACTIVATED" and the value is in the past
+    And the response property "$.statusInfo" exists only if "$.bookingStatus" is "TERMINATED" or "$.statusInfo" is "DELETE_REQUESTED"
 
-  @qos_booking_getBookingById_02_get_recent_unavailable
-  Scenario: QOS Session becoming "UNAVAILABLE" is not released for at least 360 seconds
-    Given an existing QoS booking failed to be created in the last 360 seconds
+  @qos_booking_getBookingById_02_get_recent_terminated
+  Scenario: QoS booking in bookingStatus "TERMINATED" is not released for at least 360 seconds
+    Given an existing QoS booking that reached bookingStatus "TERMINATED" in the last 360 seconds
     And the path parameter "bookingId" is set to the value for that QoS booking
     When the request "getBookingById" is sent
     Then the response status code is 200
     And the response header "Content-Type" is "application/json"
     And the response header "x-correlator" has same value as the request header "x-correlator"
     And the response body complies with the OAS schema at "#/components/schemas/BookingInfo"
-    And the response property "$.qosStatus" is "UNAVAILABLE"
+    And the response property "$.bookingStatus" is "TERMINATED"
 
   # Response 400
 
