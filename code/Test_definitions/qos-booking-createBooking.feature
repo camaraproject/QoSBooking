@@ -44,7 +44,7 @@ Feature: CAMARA QoS Booking API, vwip - Operation createBooking
 
     Examples:
       | property                 | condition                                                                                                 |
-      | $.device                 | exists only if provided in the request body and contains only one of the identifier values in the request |
+      | $.device                 | exists only if provided in the request body and always if more than one device identifier is provided, And contains a single device identifier that was included in the request |
       | $.qosProfile             | same value as in the request body                                                                         |
       | $.startTime              | is in the future                                                                                          |
       | $.bookingStatus          | is "REQUESTED", "SCHEDULED" or "TERMINATED"                                                               |
