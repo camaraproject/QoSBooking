@@ -182,8 +182,8 @@ paths:
           $ref: "#/components/responses/GenericDevice404"
         "409":
           $ref: "#/components/responses/BookingConflict409"
-        "":
-          $ref: "#/components/responses/BookingUnprocessableEntity"
+        "422":
+          $ref: "#/components/responses/BookingUnprocessableEntity422"
         "429":
           $ref: "#/components/responses/Generic429"
       security:
@@ -334,8 +334,8 @@ paths:
           $ref: "#/components/responses/Generic403"
         "404":
           $ref: "#/components/responses/GenericDevice404"
-        "":
-          $ref: "#/components/responses/Generic"
+        "422":
+          $ref: "#/components/responses/Generic422"
         "429":
           $ref: "#/components/responses/Generic429"
       security:
@@ -1255,7 +1255,7 @@ components:
                 code: GONE
                 message: Access to the target resource is no longer available.
 
-    Generic:
+    Generic422:
       description: Unprocessable Content
       headers:
         x-correlator:
