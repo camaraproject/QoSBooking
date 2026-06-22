@@ -627,14 +627,12 @@ paths:
             - "qos-booking-and-assignment:qos-bookings:retrieve-by-device"
 
 components:
-  # ─── Security schemes ────────────────────────────────────────────────────────
   securitySchemes:
     openId:
       $ref: "../common/CAMARA_common.yaml#/components/securitySchemes/openId"
     notificationsBearerAuth:
       $ref: "../common/CAMARA_event_common.yaml#/components/securitySchemes/notificationsBearerAuth"
 
-  # ─── Parameters ──────────────────────────────────────────────────────────────
   parameters:
     BookingId:
       name: bookingId
@@ -647,49 +645,11 @@ components:
     x-correlator:
       $ref: "../common/CAMARA_common.yaml#/components/parameters/x-correlator"
 
-  # ─── Headers ─────────────────────────────────────────────────────────────────
   headers:
     x-correlator:
       $ref: "../common/CAMARA_common.yaml#/components/headers/x-correlator"
 
-  # ─── Schemas ─────────────────────────────────────────────────────────────────
   schemas:
-
-    # ── Aliases: CAMARA_common.yaml ───────────────────────────────────────────
-    XCorrelator:
-      $ref: "../common/CAMARA_common.yaml#/components/schemas/XCorrelator"
-    ErrorInfo:
-      $ref: "../common/CAMARA_common.yaml#/components/schemas/ErrorInfo"
-    Device:
-      $ref: "../common/CAMARA_common.yaml#/components/schemas/Device"
-    DeviceResponse:
-      $ref: "../common/CAMARA_common.yaml#/components/schemas/DeviceResponse"
-    Area:
-      $ref: "../common/CAMARA_common.yaml#/components/schemas/Area"
-    AreaType:
-      $ref: "../common/CAMARA_common.yaml#/components/schemas/AreaType"
-    Circle:
-      $ref: "../common/CAMARA_common.yaml#/components/schemas/Circle"
-    Polygon:
-      $ref: "../common/CAMARA_common.yaml#/components/schemas/Polygon"
-    PointList:
-      $ref: "../common/CAMARA_common.yaml#/components/schemas/PointList"
-    Point:
-      $ref: "../common/CAMARA_common.yaml#/components/schemas/Point"
-    Latitude:
-      $ref: "../common/CAMARA_common.yaml#/components/schemas/Latitude"
-    Longitude:
-      $ref: "../common/CAMARA_common.yaml#/components/schemas/Longitude"
-
-    # ── Aliases: CAMARA_event_common.yaml ─────────────────────────────────────
-    SinkCredential:
-      $ref: "../common/CAMARA_event_common.yaml#/components/schemas/SinkCredential"
-    AccessTokenCredential:
-      $ref: "../common/CAMARA_event_common.yaml#/components/schemas/AccessTokenCredential"
-    PrivateKeyJWTCredential:
-      $ref: "../common/CAMARA_event_common.yaml#/components/schemas/PrivateKeyJWTCredential"
-
-    # ── API-specific schemas ──────────────────────────────────────────────────
     BookingId:
       description: Booking Identifier in UUID format
       type: string
@@ -711,7 +671,7 @@ components:
             duration:
               $ref: "#/components/schemas/Duration"
             serviceArea:
-              $ref: "#/components/schemas/Area"
+              $ref: "../common/CAMARA_common.yaml#/components/schemas/Area"
             sink:
               type: string
               format: uri
@@ -720,7 +680,7 @@ components:
               description: The address to which events shall be delivered, using the HTTP protocol.
               example: "https://endpoint.example.com/sink"
             sinkCredential:
-              $ref: "#/components/schemas/SinkCredential"
+              $ref: "../common/CAMARA_event_common.yaml#/components/schemas/SinkCredential"
           required:
             - qosProfile
             - startTime
@@ -747,7 +707,7 @@ components:
             duration:
               $ref: "#/components/schemas/Duration"
             serviceArea:
-              $ref: "#/components/schemas/Area"
+              $ref: "../common/CAMARA_common.yaml#/components/schemas/Area"
           required:
             - bookingId
             - remainingDevices
@@ -781,7 +741,7 @@ components:
             duration:
               $ref: "#/components/schemas/Duration"
             serviceArea:
-              $ref: "#/components/schemas/Area"
+              $ref: "../common/CAMARA_common.yaml#/components/schemas/Area"
             status:
               $ref: "#/components/schemas/Status"
             statusInfo:
@@ -814,7 +774,7 @@ components:
           description: The address to which events shall be delivered, using the HTTP protocol.
           example: "https://endpoint.example.com/sink"
         sinkCredential:
-          $ref: "#/components/schemas/SinkCredential"
+          $ref: "../common/CAMARA_event_common.yaml#/components/schemas/SinkCredential"
 
     DeviceAssignmentOutput:
       description: |
@@ -846,7 +806,7 @@ components:
       additionalProperties: false
       properties:
         device:
-          $ref: "#/components/schemas/Device"
+          $ref: "../common/CAMARA_common.yaml#/components/schemas/Device"
 
     RetrieveBookingsOutput:
       description: QoS bookings for a given device
@@ -1066,7 +1026,7 @@ components:
       minItems: 1
       maxItems: 50
       items:
-        $ref: "#/components/schemas/Device"
+        $ref: "../common/CAMARA_common.yaml#/components/schemas/Device"
 
     DeviceResponseArray:
       description: List of device identifiers that have been successfully assigned based on the request.
@@ -1074,12 +1034,9 @@ components:
       minItems: 1
       maxItems: 50
       items:
-        $ref: "#/components/schemas/DeviceResponse"
+        $ref: "../common/CAMARA_common.yaml#/components/schemas/DeviceResponse"
 
-  # ─── Responses ───────────────────────────────────────────────────────────────
   responses:
-
-    # ── Aliases: CAMARA_common.yaml ───────────────────────────────────────────
     Generic400:
       $ref: "../common/CAMARA_common.yaml#/components/responses/Generic400"
     Generic401:
@@ -1095,7 +1052,6 @@ components:
     Generic429:
       $ref: "../common/CAMARA_common.yaml#/components/responses/Generic429"
 
-    # ── API-specific responses ────────────────────────────────────────────────
     CreateBookingOrAssign400:
       description: Bad Request when creating a QoS booking or assigning devices to a booking.
       headers:
@@ -1105,7 +1061,7 @@ components:
         application/json:
           schema:
             allOf:
-              - $ref: "#/components/schemas/ErrorInfo"
+              - $ref: "../common/CAMARA_common.yaml#/components/schemas/ErrorInfo"
               - type: object
                 properties:
                   status:
@@ -1164,7 +1120,7 @@ components:
         application/json:
           schema:
             allOf:
-              - $ref: "#/components/schemas/ErrorInfo"
+              - $ref: "../common/CAMARA_common.yaml#/components/schemas/ErrorInfo"
               - type: object
                 properties:
                   status:
@@ -1202,7 +1158,6 @@ components:
                 code: INCOMPATIBLE_STATE
                 message: A referenced resource is in an incompatible state.
 
-  # ─── Examples ────────────────────────────────────────────────────────────────
   examples:
     BOOKING_INPUT_1:
       summary: Booking Request Example-1
