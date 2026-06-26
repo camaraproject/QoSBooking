@@ -36,7 +36,7 @@ Feature: CAMARA QoS Booking API, vwip - Operation getBookingById
     And the response property "$.applicationServerPorts" exists only if provided for createBooking and with the same value
     And the response property "$.sink" exists only if provided for createBooking and with the same value
     And the response property "$.sinkCredential" does not exist
-    And the response property "$.startedAt" exists only if "$.bookingStatus" is "ACTIVATED" and the value is in the past
+    And the response property "$.startedAt" exists only if "$.bookingStatus" is "ACTIVATED" or "TERMINATED", and the value is in the past
     And the response property "$.statusInfo" exists only if "$.bookingStatus" is "TERMINATED" or "$.statusInfo" is "DELETE_REQUESTED"
 
   @qos_booking_getBookingById_02_get_recent_terminated

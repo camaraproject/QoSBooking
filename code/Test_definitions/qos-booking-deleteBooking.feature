@@ -59,7 +59,6 @@ Feature: CAMARA QoS Booking API, vwip - Operation deleteBooking
     And the path parameter "bookingId" is set to the value for that QoS booking
     When the request "deleteBooking" is sent
     Then the response status code is 204
-    And the response header "Content-Type" is "application/json"
     And the response header "x-correlator" has same value as the request header "x-correlator"
 
   @qos_booking_deleteBooking_02_event_notification
