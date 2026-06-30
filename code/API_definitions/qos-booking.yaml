@@ -402,7 +402,6 @@ components:
           format: uri
           pattern: ^https:\/\/.+$
           maxLength: 2048
-          # This is typically a relative URI. Thus, 2048 characters can be enough.
           description: The address to which events shall be delivered, using the HTTP protocol.
           example: "https://endpoint.example.com/sink"
         sinkCredential:
