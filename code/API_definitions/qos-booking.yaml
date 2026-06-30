@@ -138,7 +138,7 @@ paths:
                 content:
                   application/cloudevents+json:
                     schema:
-                      $ref: "#/components/schemas/CloudEvent"
+                      $ref: "#/components/schemas/BookingNotificationEvent"
                     examples:
                       BOOKING_STATUS_CHANGED_EXAMPLE:
                         $ref: "#/components/examples/BOOKING_STATUS_CHANGED_EXAMPLE"
@@ -650,45 +650,20 @@ components:
       format: string
       pattern: "^[a-zA-Z0-9_.-]+$"
 
-    CloudEvent:
-      description: Event compliant with the CloudEvents specification
-      required:
-        - id
-        - source
-        - specversion
-        - type
-        - time
-      properties:
-        id:
-          description: Identifier of this event, that must be unique in the source context.
-          type: string
-        source:
-          description: Identifies the context in which an event happened in the specific Provider Implementation.
-          type: string
-          format: uri-reference
-        type:
-          description: The type of the event.
-          type: string
-          enum:
-            - "org.camaraproject.qos-booking.v0.status-changed"
-        specversion:
-          description: Version of the specification to which this event conforms (must be 1.0 if it conforms to cloudevents 1.0.2 version)
-          type: string
-          enum:
-            - "1.0"
-        datacontenttype:
-          description: 'media-type that describes the event payload encoding, must be "application/json" for CAMARA APIs'
-          type: string
-          enum:
-            - "application/json"
-        data:
-          description: Event notification details payload, which depends on the event type
-          type: object
-        time:
-          description: |
-            Timestamp of when the occurrence happened. It must follow [RFC 3339](https://datatracker.ietf.org/doc/html/rfc3339#section-5.6) and must have time zone.
-          type: string
-          format: date-time
+    BookingEventType:
+      description: Enum of event types for the QoS Booking API.
+      type: string
+      enum:
+        - org.camaraproject.qos-booking.v0.status-changed
+
+    BookingNotificationEvent:
+      description: Notification event for QoS booking status changes. Constrains the CloudEvent `type` to access-specific event types.
+      allOf:
+        - $ref: "../common/CAMARA_event_common.yaml#/components/schemas/CloudEvent"
+        - type: object
+          properties:
+            type:
+              $ref: "#/components/schemas/BookingEventType"
       discriminator:
         propertyName: "type"
         mapping:
@@ -697,7 +672,7 @@ components:
     EventStatusChanged:
       description: Event to notify a QoS booking status change
       allOf:
-        - $ref: "#/components/schemas/CloudEvent"
+        - $ref: "#/components/schemas/BookingNotificationEvent"
         - type: object
           properties:
             data:
