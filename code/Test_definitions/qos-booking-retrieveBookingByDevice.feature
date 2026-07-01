@@ -34,7 +34,7 @@ Feature: CAMARA QoS Booking API, vwip - Operation retrieveBookingByDevice
     # The response has to comply with the generic response schema which is part of the spec
     And the response body complies with the OAS schema at "/components/schemas/RetrieveBookingsOutput"
     # Additionally any success response has to comply with some constraints beyond the schema compliance
-    And in all items in the response, property "device" exists only if provided for createBooking and always if more than one device identifier is provided, And contains a single device identifier that was included in the request
+    And in all items in the response, property "device" exists only if provided for createBooking, containing at most one identifier included in the request
     And in all items in the response, property "applicationServer" exists only if provided for createBooking and with the same value
     And in all items in the response, property "qosProfile" has the value provided for createBooking
     And in all items in the response, property "devicePorts" exists only if provided for createBooking and with the same value
