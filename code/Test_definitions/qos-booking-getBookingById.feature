@@ -29,14 +29,14 @@ Feature: CAMARA QoS Booking API, vwip - Operation getBookingById
     # The response has to comply with the generic response schema which is part of the spec
     And the response body complies with the OAS schema at "#/components/schemas/BookingInfo"
     # Additionally any success response has to comply with some constraints beyond the schema compliance
-    And the response property "$.device" exists only if provided for createBooking and with the same value
+    And the response property "$.device" exists only if provided for createBooking, containing at most one identifier included in the request
     And the response property "$.applicationServer" exists only if provided for createBooking and with the same value
     And the response property "$.qosProfile" has the value provided for createBooking
     And the response property "$.devicePorts" exists only if provided for createBooking and with the same value
     And the response property "$.applicationServerPorts" exists only if provided for createBooking and with the same value
     And the response property "$.sink" exists only if provided for createBooking and with the same value
     And the response property "$.sinkCredential" does not exist
-    And the response property "$.startedAt" exists only if "$.bookingStatus" is "ACTIVATED" or "TERMINATED", and the value is in the past
+    And the response property "$.startedAt" exists only if "$.bookingStatus" is "ACTIVATED" or "TERMINATED", and the value is in the past
     And the response property "$.statusInfo" exists only if "$.bookingStatus" is "TERMINATED" or "$.statusInfo" is "DELETE_REQUESTED"
 
   @qos_booking_getBookingById_02_get_recent_terminated
