@@ -579,7 +579,6 @@ Feature: CAMARA QoS Booking API, vwip - Operation createBooking
     And the response property "$.code" is "QOS_BOOKING.AREA_NOT_COVERED"
     And the response property "$.message" contains a user-friendly text
 
-## Code QOS_BOOKING.QOS_PROFILE_NOT_APPLICABLE to be added in next version
 
   @qos_booking_createBooking_422.04_qos_profile_not_applicable
   Scenario: QoS Profile not applicable for booking creation
