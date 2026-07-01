@@ -151,9 +151,117 @@ Feature: CAMARA QoS Booking and Assignment, vwip
     And the response header "x-correlator" has the same value as the request header "x-correlator"
     And the response body complies with the OAS schema at "/components/schemas/RetrieveBookingsOutput"
     # Additionally any success response has to comply with some constraints beyond the schema compliance
-    And the response body property "$.device" exists only if provided for createBooking and with the same value
-    And the response body property "$.qosProfile" has the value provided for createBooking
-    And the response body property "$.startTime" has the value provided for createBooking
-    And the response body property "$.duration" has the value provided for createBooking
-    And the response body property "$.serviceArea" has the value provided for createBooking
-    And the response body property "$.sink" exists only if provided for createBooking and with the same value
+    And the response body is a non-empty array of items compliant with the OAS schema at "/components/schemas/BookingDetails"
+    And the response body property "$[0].bookingId" exists and is a valid UUID
+    And the response body property "$[0].qosProfile" has the value provided for createBooking
+    And the response body property "$[0].startTime" has the value provided for createBooking
+    And the response body property "$[0].duration" has the value provided for createBooking
+    And the response body property "$[0].serviceArea" has the value provided for createBooking
+
+  # Error scenarios for POST /qos-bookings
+  @qos_bookings_createBooking_400_num_devices_out_of_range
+  Scenario: Create booking fails when numDevices exceeds maximum of 50
+    Given the resource "/qos-booking-and-assignment/vwip/qos-bookings"
+    And the header "Content-Type" is set to "application/json"
+    And the operationId is "createBooking"
+    And the request body is set to a request body compliant with the schema at "/components/schemas/BookingInput"
+    And the request body property "$.numDevices" is set to 51
+    And the request body property "$.qosProfile" is set to a valid QoS Profile as returned by QoS Profiles API
+    And the request body property "$.startTime" is set to a valid time
+    And the request body property "$.duration" is set to a valid duration for the selected QoS profile
+    And the request body property "$.serviceArea" is set to a valid service area compliant with schema at "/components/schemas/Area"
+    When the request "createBooking" is sent
+    Then the response status code is 400
+    And the response header "Content-Type" is "application/json"
+    And the response body property "$.status" is 400
+    And the response body property "$.code" is "OUT_OF_RANGE"
+
+  @qos_bookings_createBooking_400_duration_out_of_range
+  Scenario: Create booking fails when duration exceeds maximum of 86400 seconds
+    Given the resource "/qos-booking-and-assignment/vwip/qos-bookings"
+    And the header "Content-Type" is set to "application/json"
+    And the operationId is "createBooking"
+    And the request body is set to a request body compliant with the schema at "/components/schemas/BookingInput"
+    And the request body property "$.qosProfile" is set to a valid QoS Profile as returned by QoS Profiles API
+    And the request body property "$.startTime" is set to a valid time
+    And the request body property "$.duration" is set to 86401
+    And the request body property "$.serviceArea" is set to a valid service area compliant with schema at "/components/schemas/Area"
+    When the request "createBooking" is sent
+    Then the response status code is 400
+    And the response header "Content-Type" is "application/json"
+    And the response body property "$.status" is 400
+    And the response body property "$.code" is "QOS_BOOKING_AND_ASSIGNMENT.DURATION_OUT_OF_RANGE"
+
+  @qos_bookings_createBooking_400_unknown_property
+  Scenario: Create booking fails when request body contains a property not declared in the schema
+    Given the resource "/qos-booking-and-assignment/vwip/qos-bookings"
+    And the header "Content-Type" is set to "application/json"
+    And the operationId is "createBooking"
+    And the request body is set to a request body compliant with the schema at "/components/schemas/BookingInput"
+    And the request body property "$.qosProfile" is set to a valid QoS Profile as returned by QoS Profiles API
+    And the request body property "$.startTime" is set to a valid time
+    And the request body property "$.duration" is set to a valid duration for the selected QoS profile
+    And the request body property "$.serviceArea" is set to a valid service area compliant with schema at "/components/schemas/Area"
+    And the request body includes an undeclared property "$.unexpectedParam" set to any value
+    When the request "createBooking" is sent
+    Then the response status code is 400
+    And the response header "Content-Type" is "application/json"
+    And the response body property "$.status" is 400
+    And the response body property "$.code" is "INVALID_ARGUMENT"
+
+  @qos_bookings_createBooking_409_incompatible_state
+  Scenario: Create booking fails when an incompatible booking already exists for the same device and overlapping schedule
+    Given the resource "/qos-booking-and-assignment/vwip/qos-bookings"
+    And the header "Content-Type" is set to "application/json"
+    And the operationId is "createBooking"
+    And an existing QoS booking already exists for the same device with an overlapping time slot and service area
+    And the request body is set to a request body compliant with the schema at "/components/schemas/BookingInput"
+    And the request body property "$.qosProfile" is set to a valid QoS Profile as returned by QoS Profiles API
+    And the request body property "$.startTime" is set to a time overlapping with the existing booking
+    And the request body property "$.duration" is set to a valid duration for the selected QoS profile
+    And the request body property "$.serviceArea" is set to a service area overlapping with the existing booking
+    When the request "createBooking" is sent
+    Then the response status code is 409
+    And the response header "Content-Type" is "application/json"
+    And the response body property "$.status" is 409
+    And the response body property "$.code" is "INCOMPATIBLE_STATE"
+
+  # Error scenarios for POST /qos-bookings/{bookingId}/devices/assign
+  @devices_assignDevices_400_too_many_devices
+  Scenario: Assign devices fails when the devices array exceeds the maximum of 50
+    Given the resource "/qos-booking-and-assignment/vwip/qos-bookings/{bookingId}/devices/assign"
+    And the "bookingId" is created by operation "createBooking"
+    And the operationId is "assignDevices"
+    And the request body property "$.devices" is set to an array of 51 valid device identifiers compliant with schema at "/components/schemas/Device"
+    When the request "assignDevices" is sent
+    Then the response status code is 400
+    And the response header "Content-Type" is "application/json"
+    And the response body property "$.status" is 400
+    And the response body property "$.code" is "INVALID_ARGUMENT"
+
+  @devices_assignDevices_400_unknown_property
+  Scenario: Assign devices fails when request body contains a property not declared in the schema
+    Given the resource "/qos-booking-and-assignment/vwip/qos-bookings/{bookingId}/devices/assign"
+    And the "bookingId" is created by operation "createBooking"
+    And the operationId is "assignDevices"
+    And the request body complies with the OAS schema at "/components/schemas/DeviceAssignmentInput"
+    And the request body property "$.devices" is set to a valid array of device identifiers compliant with schema at "/components/schemas/Devices"
+    And the request body includes an undeclared property "$.unexpectedParam" set to any value
+    When the request "assignDevices" is sent
+    Then the response status code is 400
+    And the response header "Content-Type" is "application/json"
+    And the response body property "$.status" is 400
+    And the response body property "$.code" is "INVALID_ARGUMENT"
+
+  # Error scenarios for POST /qos-bookings/retrieve
+  @devices_retrieveBooking_400_unknown_property
+  Scenario: Retrieve booking fails when request body contains a property not declared in the schema
+    Given the resource "/qos-booking-and-assignment/vwip/qos-bookings/retrieve"
+    And the operationId is "retrieveBookingByDevice"
+    And the request body complies with the OAS schema at "/components/schemas/RetrieveBookingByDevice"
+    And the request body includes an undeclared property "$.unexpectedParam" set to any value
+    When the request "retrieveBookingByDevice" is sent
+    Then the response status code is 400
+    And the response header "Content-Type" is "application/json"
+    And the response body property "$.status" is 400
+    And the response body property "$.code" is "INVALID_ARGUMENT"
