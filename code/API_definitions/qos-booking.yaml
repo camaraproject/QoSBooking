@@ -721,6 +721,7 @@ components:
         mapping:
           CIRCLE: "#/components/schemas/Circle"
           POLYGON: "#/components/schemas/Polygon"
+          AREAID: "#/components/schemas/AreaId"
           AREANAME: "#/components/schemas/AreaName"
 
     AreaType:
@@ -729,10 +730,12 @@ components:
         Type of this area.
         CIRCLE - The area is defined as a circle.
         POLYGON - The area is defined as a polygon.
+        AREAID - The area is defined as an area ID.
         AREANAME - The area is defined as an area name.
       enum:
         - CIRCLE
         - POLYGON
+        - AREAID
         - AREANAME
 
     Circle:
@@ -761,6 +764,17 @@ components:
           properties:
             boundary:
               $ref: "#/components/schemas/PointList"
+    AreaId:
+      description: The area is defined as an area ID.
+      allOf:
+        - $ref: "#/components/schemas/Area"
+        - type: object
+          required:
+            - areaId
+          properties:
+            areaId:
+              type: string
+              format: uuid
 
     AreaName:
       description: The value of "AreaName" might be predefined and only regional or even an operator-specific in this API version. As a prerequisite, the API Provider may offer API Consumer the "AreaName" values, which API consumer can request, in a preparation phase. And then API Consumers can select from the "AreaNames" as Service Areas.
