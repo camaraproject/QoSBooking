@@ -81,7 +81,7 @@ Feature: CAMARA QoS Booking API, vwip - Operation retrieveBookingByDevice
     Examples:
       | device_identifier                | oas_spec_schema                             |
       | $.device.phoneNumber             | /components/schemas/PhoneNumber             |
-      | $.device.ipv4Address             | /components/schemas/DeviceIpv4Addr          |
+      | $.device.ipv4Address             | /components/schemas/DeviceIpv4Address       |
       | $.device.ipv6Address             | /components/schemas/DeviceIpv6Address       |
       | $.device.networkAccessIdentifier | /components/schemas/NetworkAccessIdentifier |
 
@@ -99,6 +99,17 @@ Feature: CAMARA QoS Booking API, vwip - Operation retrieveBookingByDevice
   @qos_booking_retrieveBookingByDevice_400.2_no_request_body
   Scenario: Missing request body
     Given the request body is not included
+    When the request "retrieveBookingByDevice" is sent
+    Then the response status code is 400
+    And the response header "x-correlator" has same value as the request header "x-correlator"
+    And the response header "Content-Type" is "application/json"
+    And the response property "$.status" is 400
+    And the response property "$.code" is "INVALID_ARGUMENT"
+    And the response property "$.message" contains a user friendly text
+
+  @qos_booking_retrieveBookingByDevice_400.3_unknown_property_in_request_body
+  Scenario: Request body includes an unknown property
+    Given the request body includes a property not defined in the OAS schema for RetrieveBookingByDevice
     When the request "retrieveBookingByDevice" is sent
     Then the response status code is 400
     And the response header "x-correlator" has same value as the request header "x-correlator"

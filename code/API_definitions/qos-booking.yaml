@@ -16,7 +16,7 @@ info:
     At least one identifier for the device (user equipment) out of four options: IPv4 address, IPv6 address, Phone number, or Network Access Identifier assigned by the network operator for the device, at the request time. After the booking request is accepted, the device may get different IP addresses, but the booking will still apply to the device that was identified during the request process. Note: Network Access Identifier is defined for future use and will not be supported with v0.1 of the API.
 
     * **Notification URL and token**:
-    API consumers may provide a callback URL (`sink`) on which notifications about all status change events (e.g. duration expiration) can be received from the API provider. This is an optional parameter. The notification will be sent as a CloudEvent compliant message. If `sink` is included, it is RECOMMENDED for the client to provide as well the `sinkCredential` property to protect the notification endpoint. In the current version,`sinkCredential.credentialType` MUST be set to `ACCESSTOKEN` if provided.
+    API consumers may provide a callback URL (`sink`) on which notifications about all status change events (e.g. duration expiration) can be received from the API provider. This is an optional parameter. The notification will be sent as a CloudEvent compliant message. If `sink` is included, it is RECOMMENDED for the client to provide as well the `sinkCredential` property to protect the notification endpoint. In the current version,`sinkCredential.credentialType` MUST be set to `ACCESSTOKEN` or `PRIVATE_KEY_JWT` if provided.
 
     # Resources and Operations overview
     The API defines four operations:
@@ -26,6 +26,7 @@ info:
     - An operation to get the QoS Booking for a given device.
     - An operation to terminate a QoS Booking, identified by its `BookingId`.
 
+    <!-- CAMARA:MANDATORY:authorization-and-authentication:BEGIN -->
     # Authorization and authentication
 
     The "Camara Security and Interoperability Profile" provides details of how an API consumer requests an access token. Please refer to Identity and Consent Management (https://github.com/camaraproject/IdentityAndConsentManagement/) for the released version of the profile.
@@ -33,27 +34,41 @@ info:
     The specific authorization flows to be used will be agreed upon during the onboarding process, happening between the API consumer and the API provider, taking into account the declared purpose for accessing the API, whilst also being subject to the prevailing legal framework dictated by local legislation.
 
     In cases where personal data is processed by the API and users can exercise their rights through mechanisms such as opt-in and/or opt-out, the use of three-legged access tokens is mandatory. This ensures that the API remains in compliance with privacy regulations, upholding the principles of transparency and user-centric privacy-by-design.
+    <!-- CAMARA:MANDATORY:authorization-and-authentication:END -->
 
+    <!-- CAMARA:MANDATORY:identifying-device-from-access-token:BEGIN -->
     # Identifying the device from the access token
 
     This API requires the API consumer to identify a device as the subject of the API as follows:
     - When the API is invoked using a two-legged access token, the subject will be identified from the optional `device` object, which therefore MUST be provided.
-
     - When a three-legged access token is used however, this optional identifier MUST NOT be provided, as the subject will be uniquely identified from the access token.
 
     This approach simplifies API usage for API consumers using a three-legged access token to invoke the API by relying on the information that is associated with the access token and was identified during the authentication process.
 
     ## Error handling:
+
     - If the subject cannot be identified from the access token and the optional `device` object is not included in the request, then the server will return an error with the `422 MISSING_IDENTIFIER` error code.
 
     - If the subject can be identified from the access token and the optional `device` object is also included in the request, then the server will return an error with the `422 UNNECESSARY_IDENTIFIER` error code. This will be the case even if the same device is identified by these two methods, as the server is unable to make this comparison.
+    <!-- CAMARA:MANDATORY:identifying-device-from-access-token:END -->
 
     - If the requested `qosProfile` exists but is currently not available for creating a booking, then the server will return an error with the `422 QOS_BOOKING.QOS_PROFILE_NOT_APPLICABLE` error code.
 
-    ### Additional CAMARA error responses
-    The list of error codes in this API specification is not exhaustive. Therefore the API specification may not document some non-mandatory error statuses as indicated in `CAMARA API Design Guide`.
+    <!-- CAMARA:MANDATORY:additional-error-responses:BEGIN -->
+    # Additional CAMARA error responses
+
+    The list of error codes in this API specification is not exhaustive. Therefore the API specification MAY not document some non-mandatory error statuses as indicated in `CAMARA API Design Guide`.
+
     Please refer to the `CAMARA_common.yaml` of the Commonalities Release associated to this API version for a complete list of error responses. The applicable Commonalities Release can be identified in the `API Readiness Checklist` document associated to this API version.
+
     As a specific rule, error `501 - NOT_IMPLEMENTED` can be only a possible error response if it is explicitly documented in the API.
+    <!-- CAMARA:MANDATORY:additional-error-responses:END -->
+
+    <!-- CAMARA:MANDATORY:request-body-strictness:BEGIN -->
+    # Request body strictness
+
+    This API rejects requests with JSON request bodies that contain properties not declared in this specification, at any nesting level. Unknown properties result in a `400 INVALID_ARGUMENT` response.
+    <!-- CAMARA:MANDATORY:request-body-strictness:END -->
 
     # Multi-SIM scenario handling
 
@@ -72,7 +87,7 @@ info:
     name: Apache 2.0
     url: https://www.apache.org/licenses/LICENSE-2.0.html
   version: wip
-  x-camara-commonalities: 0.8
+  x-camara-commonalities: 0.8.0
 
 externalDocs:
   description: Project documentation at CAMARA
@@ -179,7 +194,7 @@ paths:
         "403":
           $ref: "#/components/responses/Generic403"
         "404":
-          $ref: "#/components/responses/GenericDevice404"
+          $ref: "#/components/responses/Generic404"
         "409":
           $ref: "#/components/responses/BookingConflict409"
         "422":
@@ -229,7 +244,7 @@ paths:
         "403":
           $ref: "#/components/responses/Generic403"
         "404":
-          $ref: "#/components/responses/Generic404"
+          $ref: "#/components/responses/NotFound404"
         "429":
           $ref: "#/components/responses/Generic429"
       security:
@@ -278,7 +293,7 @@ paths:
         "403":
           $ref: "#/components/responses/Generic403"
         "404":
-          $ref: "#/components/responses/Generic404"
+          $ref: "#/components/responses/NotFound404"
         "429":
           $ref: "#/components/responses/Generic429"
       security:
@@ -333,7 +348,7 @@ paths:
         "403":
           $ref: "#/components/responses/Generic403"
         "404":
-          $ref: "#/components/responses/GenericDevice404"
+          $ref: "#/components/responses/Generic404"
         "422":
           $ref: "#/components/responses/Generic422"
         "429":
@@ -345,14 +360,9 @@ paths:
 components:
   securitySchemes:
     openId:
-      description: OpenID Connect authentication
-      type: openIdConnect
-      openIdConnectUrl: https://example.com/.well-known/openid-configuration
+      $ref: '../common/CAMARA_common.yaml#/components/securitySchemes/openId'
     notificationsBearerAuth:
-      description: Bearer authentication for notifications
-      type: http
-      scheme: bearer
-      bearerFormat: "{$request.body#/sinkCredential.credentialType}"
+      $ref: '../common/CAMARA_event_common.yaml#/components/securitySchemes/notificationsBearerAuth'
 
   parameters:
     BookingId:
@@ -364,17 +374,11 @@ components:
         $ref: "#/components/schemas/BookingId"
 
     x-correlator:
-      name: x-correlator
-      in: header
-      description: Correlation id for the different services
-      schema:
-        $ref: "#/components/schemas/XCorrelator"
+      $ref: '../common/CAMARA_common.yaml#/components/parameters/x-correlator'
 
   headers:
     x-correlator:
-      description: Correlation id for the different services
-      schema:
-        $ref: "#/components/schemas/XCorrelator"
+      $ref: '../common/CAMARA_common.yaml#/components/headers/x-correlator'
 
   schemas:
     BookingId:
@@ -502,87 +506,10 @@ components:
       maxItems: 100
 
     SinkCredential:
-      description: A sink credential provides authentication or authorization information necessary to enable delivery of events to a target.
-      type: object
-      properties:
-        credentialType:
-          type: string
-          enum:
-            - PLAIN
-            - ACCESSTOKEN
-            - PRIVATE_KEY_JWT
-          description: The type of the credential - MUST be set to ACCESSTOKEN or PRIVATE_KEY_JWT for now
-      discriminator:
-        propertyName: credentialType
-        mapping:
-          PLAIN: "#/components/schemas/PlainCredential"
-          ACCESSTOKEN: "#/components/schemas/AccessTokenCredential"
-          PRIVATE_KEY_JWT: "#/components/schemas/PrivateKeyJWTCredential"
-      required:
-        - credentialType
-
-    PlainCredential:
-      type: object
-      description: A plain credential as a combination of an identifier and a secret.
-      allOf:
-        - $ref: "#/components/schemas/SinkCredential"
-        - type: object
-          required:
-            - identifier
-            - secret
-          properties:
-            identifier:
-              description: The identifier might be an account or username.
-              type: string
-              maxLength: 256
-            secret:
-              description: The secret might be a password or passphrase.
-              type: string
-              maxLength: 512
-
-    AccessTokenCredential:
-      type: object
-      description: An access token credential. This type of credential is meant to be used by API Consumers that have limited capabilities to handle authorization requests.
-      allOf:
-        - $ref: "#/components/schemas/SinkCredential"
-        - type: object
-          properties:
-            accessToken:
-              description: REQUIRED. An access token is a token granting access to the target resource.
-              type: string
-              maxLength: 4096
-            accessTokenExpiresUtc:
-              type: string
-              format: date-time
-              maxLength: 64
-              description: |
-                REQUIRED. An absolute (UTC) timestamp at which the token shall be considered expired.
-                In the case of an ACCESS_TOKEN_EXPIRED termination reason, implementation should notify the client before the expiration date.
-                If the access token is a JWT and registered "exp" (Expiration Time) claim is present, the two expiry times should match.
-                It must follow [RFC 3339](https://datatracker.ietf.org/doc/html/rfc3339#section-5.6) and must have time zone.
-              example: "2023-07-03T12:27:08.312Z"
-            accessTokenType:
-              description: REQUIRED. Type of the access token (See [OAuth 2.0](https://tools.ietf.org/html/rfc6749#section-7.1)).
-              type: string
-              enum:
-                - bearer
-          required:
-            - accessToken
-            - accessTokenExpiresUtc
-            - accessTokenType
-
-    PrivateKeyJWTCredential:
-      type: object
-      description: Use PRIVATE_KEY_JWT to get an access token. The authorization server information needed for this type of sink credential (token endpoint, client ID, JWKS URL) is shared upfront between the client and the CAMARA entity. This type of credential is to be used by clients that have an authorization server.
-      allOf:
-        - $ref: "#/components/schemas/SinkCredential"
+      $ref: '../common/CAMARA_event_common.yaml#/components/schemas/SinkCredential'
 
     Port:
-      description: TCP or UDP port number
-      type: integer
-      format: int32
-      minimum: 0
-      maximum: 65535
+      $ref: '../common/CAMARA_common.yaml#/components/schemas/Port'
 
     PortsSpec:
       description: Specification of several TCP or UDP ports
@@ -761,66 +688,19 @@ components:
               maxLength: 256
 
     PointList:
-      description: List of points defining a polygon
-      type: array
-      items:
-        $ref: "#/components/schemas/Point"
-      minItems: 3
-      maxItems: 15
+      $ref: '../common/CAMARA_common.yaml#/components/schemas/PointList'
 
     Point:
-      type: object
-      description: Coordinates (latitude, longitude) defining a location in a map
-      required:
-        - latitude
-        - longitude
-      properties:
-        latitude:
-          $ref: "#/components/schemas/Latitude"
-        longitude:
-          $ref: "#/components/schemas/Longitude"
-      example:
-        latitude: 50.735851
-        longitude: 7.10066
+      $ref: '../common/CAMARA_common.yaml#/components/schemas/Point'
 
     Latitude:
-      description: Latitude component of a location
-      type: number
-      format: double
-      minimum: -90
-      maximum: 90
+      $ref: '../common/CAMARA_common.yaml#/components/schemas/Latitude'
 
     Longitude:
-      description: Longitude component of location
-      type: number
-      format: double
-      minimum: -180
-      maximum: 180
+      $ref: '../common/CAMARA_common.yaml#/components/schemas/Longitude'
 
     Device:
-      description: |
-        End-user equipment able to connect to the network. Examples of devices include smartphones or IoT sensors/actuators.
-
-        The developer can choose to provide the below specified device identifiers:
-
-        * `ipv4Address`
-        * `ipv6Address`
-        * `phoneNumber`
-        * `networkAccessIdentifier`
-
-        NOTE1: the network operator might support only a subset of these options. The API invoker can provide multiple identifiers to be compatible across different network operators. In this case the identifiers MUST belong to the same device.
-        NOTE2: for the Commonalities release v0.4, we are enforcing that the networkAccessIdentifier is only part of the schema for future-proofing, and CAMARA does not currently allow its use. After the CAMARA meta-release work is concluded and the relevant issues are resolved, its use will need to be explicitly documented in the guidelines.
-      type: object
-      properties:
-        phoneNumber:
-          $ref: "#/components/schemas/PhoneNumber"
-        networkAccessIdentifier:
-          $ref: "#/components/schemas/NetworkAccessIdentifier"
-        ipv4Address:
-          $ref: "#/components/schemas/DeviceIpv4Address"
-        ipv6Address:
-          $ref: "#/components/schemas/DeviceIpv6Address"
-      minProperties: 1
+      $ref: '../common/CAMARA_common.yaml#/components/schemas/Device'
 
     ApplicationServer:
       description: |
@@ -861,67 +741,8 @@ components:
             - 2001:db8:85a3:8d3::0/64
             - 2001:db8:85a3:8d3::/64
 
-    NetworkAccessIdentifier:
-      description: A public identifier addressing a subscription in a mobile network. In 3GPP terminology, it corresponds to the GPSI formatted with the External Identifier ({Local Identifier}@{Domain Identifier}). Unlike the telephone number, the network access identifier is not subjected to portability ruling in force, and is individually managed by each operator.
-      type: string
-      maxLength: 2028
-      example: "123456789@domain.com"
-
-    PhoneNumber:
-      description: A public identifier addressing a telephone subscription. In mobile networks it corresponds to the MSISDN (Mobile Station International Subscriber Directory Number). In order to be globally unique it has to be formatted in international format, according to E.164 standard, prefixed with '+'.
-      type: string
-      pattern: '^\+[1-9][0-9]{4,14}$'
-      maxLength: 16
-      example: "+123456789"
-
-    DeviceIpv4Address:
-      type: object
-      description: |
-        The device should be identified by either the public (observed) IP address and port as seen by the application server, or the private (local) and any public (observed) IP addresses in use by the device (this information can be obtained by various means, for example from some DNS servers).
-
-        If the allocated and observed IP addresses are the same (i.e. NAT is not in use) then  the same address should be specified for both publicAddress and privateAddress.
-
-        If NAT64 is in use, the device should be identified by its publicAddress and publicPort, or separately by its allocated IPv6 address (field ipv6Address of the Device object)
-
-        In all cases, publicAddress must be specified, along with at least one of either privateAddress or publicPort, dependent upon which is known. In general, mobile devices cannot be identified by their public IPv4 address alone.
-      properties:
-        publicAddress:
-          $ref: "#/components/schemas/SingleIpv4Address"
-        privateAddress:
-          $ref: "#/components/schemas/SingleIpv4Address"
-        publicPort:
-          $ref: "#/components/schemas/Port"
-      anyOf:
-        - required: [publicAddress, privateAddress]
-        - required: [publicAddress, publicPort]
-      example:
-        {
-          "publicAddress": "203.0.113.0",
-          "publicPort": 59765
-        }
-
-    SingleIpv4Address:
-      description: A single IPv4 address with no subnet mask
-      type: string
-      maxLength: 15
-      format: ipv4
-      example: "203.0.113.0"
-
-    DeviceIpv6Address:
-      description: |
-        The device should be identified by the observed IPv6 address, or by any single IPv6 address from within the subnet allocated to the device (e.g. adding ::0 to the /64 prefix).
-      type: string
-      maxLength: 45
-      format: ipv6
-      example: 2001:db8:85a3:8d3:1319:8a2e:370:7344
-
     DeviceResponse:
-      description: |
-        An identifier for the end-user equipment able to connect to the network that the response refers to. This parameter is only returned when the API consumer includes the `device` parameter in their request (i.e. they are using a two-legged access token), and is relevant when more than one device identifier is specified, as only one of those device identifiers is allowed in the response.
-        If the API consumer provides more than one device identifier in their request, the API provider must return a single identifier which is the one they are using to fulfil the request, even if the identifiers do not match the same device. API provider does not perform any logic to validate/correlate that the indicated device identifiers match the same device. No error should be returned if the identifiers are otherwise valid to prevent API consumers correlating different identifiers with a given end user.
-      allOf:
-        - $ref: "#/components/schemas/Device"
-        - maxProperties: 1
+      $ref: '../common/CAMARA_common.yaml#/components/schemas/DeviceResponse'
 
     BookingStatus:
       description: |
@@ -948,68 +769,11 @@ components:
         - TERMINATED
 
     ErrorInfo:
-      description: Common schema for errors
-      type: object
-      properties:
-        status:
-          type: integer
-          format: int32
-          minimum: 100
-          maximum: 599
-          description: HTTP response status code
-        code:
-          type: string
-          maxLength: 96
-          description: A human-readable code to describe the error
-        message:
-          type: string
-          maxLength: 512
-          description: A human-readable description of what the event represents
-      required:
-        - status
-        - code
-        - message
-
-    XCorrelator:
-      description: Correlation id for the different services
-      type: string
-      maxLength: 256
-      pattern: ^[a-zA-Z0-9-_:;.\/<>{}]{0,256}$
-      example: "b4333c46-49c0-4f62-80d7-f0ef930f1c46"
+      $ref: '../common/CAMARA_common.yaml#/components/schemas/ErrorInfo'
 
   responses:
     Generic400:
-      description: Bad Request
-      headers:
-        x-correlator:
-          $ref: "#/components/headers/x-correlator"
-      content:
-        application/json:
-          schema:
-            allOf:
-              - $ref: "#/components/schemas/ErrorInfo"
-              - type: object
-                properties:
-                  status:
-                    enum:
-                      - 400
-                  code:
-                    enum:
-                      - INVALID_ARGUMENT
-                      - OUT_OF_RANGE
-          examples:
-            GENERIC_400_INVALID_ARGUMENT:
-              description: Invalid Argument. Generic Syntax Exception
-              value:
-                status: 400
-                code: INVALID_ARGUMENT
-                message: Client specified an invalid argument, request body or query param.
-            GENERIC_400_OUT_OF_RANGE:
-              description: Out of Range. Specific Syntax Exception used when a given field has a pre-defined range or a invalid filter criteria combination is requested
-              value:
-                status: 400
-                code: OUT_OF_RANGE
-                message: Client specified an invalid range.
+      $ref: '../common/CAMARA_common.yaml#/components/responses/Generic400'
 
     CreateBooking400:
       description: Bad Request when creating a QoS booking.
@@ -1066,84 +830,15 @@ components:
                 message: sink not valid for the specified protocol
 
     Generic401:
-      description: Unauthorized
-      headers:
-        x-correlator:
-          $ref: "#/components/headers/x-correlator"
-      content:
-        application/json:
-          schema:
-            allOf:
-              - $ref: "#/components/schemas/ErrorInfo"
-              - type: object
-                properties:
-                  status:
-                    enum:
-                      - 401
-                  code:
-                    enum:
-                      - UNAUTHENTICATED
-          examples:
-            GENERIC_401_UNAUTHENTICATED:
-              description: Request cannot be authenticated
-              value:
-                status: 401
-                code: UNAUTHENTICATED
-                message: Request not authenticated due to missing, invalid, or expired credentials.
+      $ref: '../common/CAMARA_common.yaml#/components/responses/Generic401'
 
     Generic403:
-      description: Forbidden
-      headers:
-        x-correlator:
-          $ref: "#/components/headers/x-correlator"
-      content:
-        application/json:
-          schema:
-            allOf:
-              - $ref: "#/components/schemas/ErrorInfo"
-              - type: object
-                properties:
-                  status:
-                    enum:
-                      - 403
-                  code:
-                    enum:
-                      - PERMISSION_DENIED
-          examples:
-            GENERIC_403_PERMISSION_DENIED:
-              description: Permission denied. OAuth2 token access does not have the required scope or when the user fails operational security
-              value:
-                status: 403
-                code: PERMISSION_DENIED
-                message: Client does not have sufficient permissions to perform this action.
+      $ref: '../common/CAMARA_common.yaml#/components/responses/Generic403'
 
     Generic404:
-      description: Not found
-      headers:
-        x-correlator:
-          $ref: "#/components/headers/x-correlator"
-      content:
-        application/json:
-          schema:
-            allOf:
-              - $ref: "#/components/schemas/ErrorInfo"
-              - type: object
-                properties:
-                  status:
-                    enum:
-                      - 404
-                  code:
-                    enum:
-                      - NOT_FOUND
-          examples:
-            GENERIC_404_NOT_FOUND:
-              description: Resource is not found
-              value:
-                status: 404
-                code: NOT_FOUND
-                message: The specified resource is not found.
+      $ref: '../common/CAMARA_common.yaml#/components/responses/Generic404'
 
-    GenericDevice404:
+    NotFound404:
       description: Not found
       headers:
         x-correlator:
@@ -1161,7 +856,6 @@ components:
                   code:
                     enum:
                       - NOT_FOUND
-                      - IDENTIFIER_NOT_FOUND
           examples:
             GENERIC_404_NOT_FOUND:
               description: Resource is not found
@@ -1169,12 +863,6 @@ components:
                 status: 404
                 code: NOT_FOUND
                 message: The specified resource is not found.
-            GENERIC_404_DEVICE_NOT_FOUND:
-              description: Device identifier not found
-              value:
-                status: 404
-                code: IDENTIFIER_NOT_FOUND
-                message: Device identifier not found.
 
     BookingConflict409:
       description: Conflict
@@ -1200,77 +888,10 @@ components:
             message: Conflict with an existing booking for the same device.
 
     Generic410:
-      description: Gone
-      headers:
-        x-correlator:
-          $ref: "#/components/headers/x-correlator"
-      content:
-        application/json:
-          schema:
-            allOf:
-              - $ref: "#/components/schemas/ErrorInfo"
-              - type: object
-                properties:
-                  status:
-                    enum:
-                      - 410
-                  code:
-                    enum:
-                      - GONE
-          examples:
-            GENERIC_410_GONE:
-              description: Use in notifications flow to allow API Consumer to indicate that its callback is no longer available
-              value:
-                status: 410
-                code: GONE
-                message: Access to the target resource is no longer available.
+      $ref: '../common/CAMARA_common.yaml#/components/responses/Generic410'
 
     Generic422:
-      description: Unprocessable Content
-      headers:
-        x-correlator:
-          $ref: "#/components/headers/x-correlator"
-      content:
-        application/json:
-          schema:
-            allOf:
-              - $ref: "#/components/schemas/ErrorInfo"
-              - type: object
-                properties:
-                  status:
-                    enum:
-                      - 422
-                  code:
-                    enum:
-                      - SERVICE_NOT_APPLICABLE
-                      - MISSING_IDENTIFIER
-                      - UNSUPPORTED_IDENTIFIER
-                      - UNNECESSARY_IDENTIFIER
-          examples:
-            GENERIC_422_SERVICE_NOT_APPLICABLE:
-              description: Service not applicable for the provided identifier
-              value:
-                status: 422
-                code: SERVICE_NOT_APPLICABLE
-                message: The service is not available for the provided identifier.
-            GENERIC_422_MISSING_IDENTIFIER:
-              description: An identifier is not included in the request and the device or phone number identification cannot be derived from the access token
-              value:
-                status: 422
-                code: MISSING_IDENTIFIER
-                message: The device cannot be identified.
-            GENERIC_422_UNSUPPORTED_IDENTIFIER:
-              description: None of the provided identifiers is supported by the implementation
-              value:
-                status: 422
-                code: UNSUPPORTED_IDENTIFIER
-                message: The identifier provided is not supported.
-            GENERIC_422_UNNECESSARY_IDENTIFIER:
-              description: An explicit identifier is provided when a device or phone number has already been identified from the access token
-              value:
-                status: 422
-                code: UNNECESSARY_IDENTIFIER
-                message: The device is already identified by the access token.
+      $ref: '../common/CAMARA_common.yaml#/components/responses/Generic422'
 
     BookingUnprocessableEntity422:
       description: Unprocessable Content
@@ -1351,37 +972,7 @@ components:
                 message: The requested QoS Profile is currently not available for booking creation.
 
     Generic429:
-      description: Too Many Requests
-      headers:
-        x-correlator:
-          $ref: "#/components/headers/x-correlator"
-      content:
-        application/json:
-          schema:
-            allOf:
-              - $ref: "#/components/schemas/ErrorInfo"
-              - type: object
-                properties:
-                  status:
-                    enum:
-                      - 429
-                  code:
-                    enum:
-                      - QUOTA_EXCEEDED
-                      - TOO_MANY_REQUESTS
-          examples:
-            GENERIC_429_QUOTA_EXCEEDED:
-              description: Request is rejected due to exceeding a business quota limit
-              value:
-                status: 429
-                code: QUOTA_EXCEEDED
-                message: Out of resource quota.
-            GENERIC_429_TOO_MANY_REQUESTS:
-              description: Access to the API has been temporarily blocked due to rate or spike arrest limits being reached
-              value:
-                status: 429
-                code: TOO_MANY_REQUESTS
-                message: Rate limit reached.
+      $ref: '../common/CAMARA_common.yaml#/components/responses/Generic429'
 
   examples:
     BOOKING_ACTIVATED_WITH_DEVICE_RESPONSE:
