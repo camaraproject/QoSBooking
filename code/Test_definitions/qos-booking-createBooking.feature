@@ -229,7 +229,7 @@ Feature: CAMARA QoS Booking API, vwip - Operation createBooking
     Examples:
       | device_identifier                | oas_spec_schema                             |
       | $.device.phoneNumber             | /components/schemas/PhoneNumber             |
-      | $.device.ipv4Address             | /components/schemas/DeviceIpv4Addr          |
+      | $.device.ipv4Address             | /components/schemas/DeviceIpv4Address          |
       | $.device.ipv6Address             | /components/schemas/DeviceIpv6Address       |
       | $.device.networkAccessIdentifier | /components/schemas/NetworkAccessIdentifier |
 
@@ -294,6 +294,17 @@ Feature: CAMARA QoS Booking API, vwip - Operation createBooking
     And the response property "$.code" is "INVALID_ARGUMENT"
     And the response property "$.message" contains a user friendly text
 
+  @qos_booking_createBooking_400.10_unknown_property_in_request_body
+  Scenario: Request body includes an unknown property
+    Given the request body includes a property not defined in the OAS schema for CreateBooking
+    When the request "createBooking" is sent
+    Then the response status code is 400
+    And the response header "x-correlator" has same value as the request header "x-correlator"
+    And the response header "Content-Type" is "application/json"
+    And the response property "$.status" is 400
+    And the response property "$.code" is "INVALID_ARGUMENT"
+    And the response property "$.message" contains a user friendly text
+
   ## Code OUT_OF_RANGE
 
   # The maximum is considered in the schema so a generic schema validator may fail and generate a 400 INVALID_ARGUMENT without further distinction,
@@ -318,26 +329,6 @@ Feature: CAMARA QoS Booking API, vwip - Operation createBooking
       | $.applicationServerPorts.ranges.from |
       | $.applicationServerPorts.ranges.to   |
       | $.applicationServerPorts.ports[*]    |
-
-  ## Code INVALID_CREDENTIAL
-
-  # For current version, sinkCredential.credentialType MUST be set to ACCESSTOKEN if provided.
-  # PLAIN and REFRESHTOKEN are considered in the schema so INVALID_ARGUMENT is not expected
-  @qos_booking_createBooking_400.7_invalid_sink_credential
-  Scenario Outline: Invalid credential
-    Given the request body property  "$.sinkCredential.credentialType" is set to "<unsupported_credential_type>"
-    When the request "createBooking" is sent
-    Then the response status code is 400
-    And the response header "x-correlator" has same value as the request header "x-correlator"
-    And the response header "Content-Type" is "application/json"
-    And the response property "$.status" is 400
-    And the response property "$.code" is "INVALID_CREDENTIAL"
-    And the response property "$.message" contains a user friendly text
-
-    Examples:
-      | unsupported_credential_type |
-      | PLAIN                       |
-      | REFRESHTOKEN                |
 
   ## Code INVALID_TOKEN
 

@@ -40,7 +40,7 @@ Feature: CAMARA QoS Booking API, vwip - Operation deleteBooking
 
     Examples:
       | property                   | condition                                                             |
-      | "$.device"                 | exists only if provided for createBooking and with the same value     |
+      | "$.device"                 | exists only if provided for createBooking, containing at most one identifier included in the request |
       | "$.applicationServer"      | exists only if provided for createBooking and with the same value     |
       | "$.qosProfile"             | has the value provided for createBooking                              |
       | "$.devicePorts"            | exists only if provided for createBooking and with the same value     |
