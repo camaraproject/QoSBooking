@@ -1,4 +1,4 @@
-Feature: CAMARA QoS Booking API, vwip - Operation deleteBooking
+Feature: CAMARA QoS Booking API, v0.2.0-rc.1 - Operation deleteBooking
   # Input to be provided by the implementation to the tester
   #
   # Implementation indications:
@@ -15,7 +15,7 @@ Feature: CAMARA QoS Booking API, vwip - Operation deleteBooking
 
   Background: Common deleteBooking setup
     Given an environment at "apiRoot"
-    And the resource "/qos-booking/vwip/device-qos-bookings/{bookingId}"
+    And the resource "/qos-booking/v0.2rc1/device-qos-bookings/{bookingId}"
     # Unless indicated otherwise the QoS booking must be created by the same API client given in the access token
     And the header "Authorization" is set to a valid access token
     And the header "x-correlator" complies with the schema at "#/components/schemas/XCorrelator"

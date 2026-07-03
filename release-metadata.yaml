@@ -1,0 +1,16 @@
+repository:
+  repository_name: QoSBooking
+  release_tag: r2.1
+  release_type: pre-release-rc
+  release_date: null
+  src_commit_sha: 8f1611a29d511bd01b7ca1c7f8a7d2a247b0e712
+apis:
+- api_name: qos-booking-and-assignment
+  api_version: 0.2.0-rc.1
+  api_title: QoS Booking and Assignment
+- api_name: qos-booking
+  api_version: 0.2.0-rc.1
+  api_title: QoS Booking
+dependencies:
+  commonalities_release: r4.3 (0.8.0)
+  identity_consent_management_release: r4.2 (0.5.0)
