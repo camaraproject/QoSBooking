@@ -626,7 +626,7 @@ components:
       type: object
       properties:
         areaType:
-          $ref: "#/components/schemas/AreaType"
+          $ref: "#/components/schemas/QosBookingAreaType"
       required:
         - areaType
       discriminator:
@@ -636,7 +636,7 @@ components:
           POLYGON: "#/components/schemas/Polygon"
           AREANAME: "#/components/schemas/AreaName"
 
-    AreaType:
+    QosBookingAreaType:
       type: string
       description: |
         Type of this area.
