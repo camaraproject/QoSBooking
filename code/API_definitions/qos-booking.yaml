@@ -196,7 +196,7 @@ paths:
         "404":
           $ref: "#/components/responses/Generic404"
         "409":
-          $ref: "#/components/responses/BookingConflict409"
+          $ref: "#/components/responses/BookingAlreadyExists409"
         "422":
           $ref: "#/components/responses/BookingUnprocessableEntity422"
         "429":
@@ -864,8 +864,8 @@ components:
                 code: NOT_FOUND
                 message: The specified resource is not found.
 
-    BookingConflict409:
-      description: Conflict
+    BookingAlreadyExists409:
+      description: Trying to create a booking which already exists for this device
       headers:
         x-correlator:
           $ref: '#/components/headers/x-correlator'
@@ -881,11 +881,11 @@ components:
                       - 409
                   code:
                     enum:
-                      - CONFLICT
+                      - ALREADY_EXISTS
           example:
             status: 409
-            code: CONFLICT
-            message: Conflict with an existing booking for the same device.
+            code: ALREADY_EXISTS
+            message: The booking that a client tried to create already exists for this device.
 
     Generic410:
       $ref: '../common/CAMARA_common.yaml#/components/responses/Generic410'
