@@ -93,11 +93,14 @@ Changes documented below are compared to version 0.1.0.
 
 ### Changed
 
-* N/A
+* Assigned devices release now supports asynchronus mode of operations by @RamTMO in https://github.com/camaraproject/QoSBooking/pull/80
+* Updates to support all 409 error codes and conflict conditions by @RamTMO in https://github.com/camaraproject/QoSBooking/pull/81
+* QoS B&A: Cloudevent alignment from r4 3 alignment by @gmuratk in https://github.com/camaraproject/QoSBooking/pull/102
+* Update duration maximum by @Masa8106 in https://github.com/camaraproject/QoSBooking/pull/117
 
 ### Fixed
 
-* N/A
+* Address Issue #64 by @RamTMO in https://github.com/camaraproject/QoSBooking/pull/76
 
 ### Removed
 
@@ -116,19 +119,25 @@ Changes documented below are compared to version 0.1.0.
 
 ### Breaking changes
 
-* N/A
+* QoS B: Update the booking status by @Masa8106 in https://github.com/camaraproject/QoSBooking/pull/88
 
 ### Added
 
-* N/A
+* Detailed test plan for QoS Booking by @jlurien in https://github.com/camaraproject/QoSBooking/pull/70
+* Add a new error code QOS_BOOKING.QOS_PROFILE_NOT_APPLICABLE by @Masa8106 in https://github.com/camaraproject/QoSBooking/pull/104
 
 ### Changed
 
-* N/A
+* QoS B: Update the booking status by @Masa8106 in https://github.com/camaraproject/QoSBooking/pull/88
+* QoS B: Alignment with Commonalities r4.3 by @Masa8106 in https://github.com/camaraproject/QoSBooking/pull/97
+* QoS B: Align CloudEvent schemas with Commonalities r4.3 pattern by @Masa8106 in https://github.com/camaraproject/QoSBooking/pull/98
+* Update duration maximum by @Masa8106 in https://github.com/camaraproject/QoSBooking/pull/117
 
 ### Fixed
 
-* N/A
+* Rename AreaType by @Masa8106 in https://github.com/camaraproject/QoSBooking/pull/115
+* QoS B: Update local error 409 by @Masa8106 in https://github.com/camaraproject/QoSBooking/pull/116
+* Correct externalDocs.description wording in qos-booking.yaml by @hdamker in https://github.com/camaraproject/QoSBooking/pull/118
 
 ### Removed
 
