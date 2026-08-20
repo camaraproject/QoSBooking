@@ -86,7 +86,7 @@ Changes documented below are compared to version 0.1.0.
 ### Breaking changes
 
 * Pending bookings are notified using a 202 status code rather than 201, by @RamTMO in #80
-* Failed bookings are notified only using 4XX errors and not a 201 status code, by @Masa8106 in #76
+* Failed bookings are notified only using 4XX errors and not a 201 status code, by @RamTMO in #76
 
 ### Added
 
