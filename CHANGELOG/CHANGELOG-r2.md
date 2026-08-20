@@ -85,7 +85,8 @@ Changes documented below are compared to version 0.1.0.
 
 ### Breaking changes
 
-* N/A
+* Pending bookings are notified using a 202 status code rather than 201
+* Failed bookings are notified only using 4XX errors and not a 201 status code
 
 ### Added
 
@@ -119,7 +120,10 @@ Changes documented below are compared to version 0.1.0.
 
 ### Breaking changes
 
-* QoS B: Update the booking status by @Masa8106 in https://github.com/camaraproject/QoSBooking/pull/88
+* Response property `status` renamed to `bookingStatus`
+* Status `AVAILABLE` renamed `ACTIVATED`
+* Status `UNAVAILABLE` renamed `TERMINATED`
+* `StatusInfo` renamed `BookingStatusInfo` and it includes additionally `BOOKING_DELCINED` and `BOOKING_REVOKED`
 
 ### Added
 
