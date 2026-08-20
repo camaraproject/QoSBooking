@@ -85,8 +85,8 @@ Changes documented below are compared to version 0.1.0.
 
 ### Breaking changes
 
-* Pending bookings are notified using a 202 status code rather than 201
-* Failed bookings are notified only using 4XX errors and not a 201 status code
+* Pending bookings are notified using a 202 status code rather than 201, by @RamTMO in #80
+* Failed bookings are notified only using 4XX errors and not a 201 status code, by @Masa8106 in #76
 
 ### Added
 
@@ -120,10 +120,10 @@ Changes documented below are compared to version 0.1.0.
 
 ### Breaking changes
 
-* Response property `status` renamed to `bookingStatus`
-* Status `AVAILABLE` renamed `ACTIVATED`
-* Status `UNAVAILABLE` renamed `TERMINATED`
-* `StatusInfo` renamed `BookingStatusInfo` and it includes additionally `BOOKING_DELCINED` and `BOOKING_REVOKED`
+* Response property `status` renamed to `bookingStatus` by @Masa8106 in #88
+* Status `AVAILABLE` renamed `ACTIVATED` by @Masa8106 in #88
+* Status `UNAVAILABLE` renamed `TERMINATED` by @Masa8106 in #88
+* `StatusInfo` renamed `BookingStatusInfo` and it includes additionally `BOOKING_DELCINED` and `BOOKING_REVOKED` by @Masa8106 in #88
 
 ### Added
 
