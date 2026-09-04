@@ -13,7 +13,7 @@ info:
     Latency, throughput or priority requirements of the application mapped to relevant QoS profile values. The set of QoS Profiles that a network operator is offering may be retrieved via the `qos-profiles` API (cf. https://github.com/camaraproject/QualityOnDemand/) or will be agreed during the onboarding with the API service provider.
 
     * **Identifier for the device**:
-    At least one identifier for the device (user equipment) out of four options: IPv4 address, IPv6 address, Phone number, or Network Access Identifier assigned by the network operator for the device, at the request time. After the booking request is accepted, the device may get different IP addresses, but the booking will still apply to the device that was identified during the request process. Note: Network Access Identifier is defined for future use and will not be supported with v0.1 of the API.
+    At least one identifier for the device (user equipment) out of four options: IPv4 address, IPv6 address, Phone number, or Network Access Identifier assigned by the network operator for the device, at the request time. After the booking request is accepted, the device may get different IP addresses, but the booking will still apply to the device that was identified during the request process. Note: Network Access Identifier is defined for future use and is not currently supported.
 
     * **Notification URL and token**:
     API consumers may provide a callback URL (`sink`) on which notifications about all status change events (e.g. duration expiration) can be received from the API provider. This is an optional parameter. The notification will be sent as a CloudEvent compliant message. If `sink` is included, it is RECOMMENDED for the client to provide as well the `sinkCredential` property to protect the notification endpoint. In the current version,`sinkCredential.credentialType` MUST be set to `ACCESSTOKEN` or `PRIVATE_KEY_JWT` if provided.
@@ -34,7 +34,96 @@ info:
      - An operation to get all the devices assigned to a given booking identified by its `BookingId`.
      - An operation to get all the associated QoS Booking for a given device.
 
+    # Booking and assignment lifecycle
+
+    This API manages two distinct but related lifecycles: the **booking lifecycle** and the
+    **device assignment lifecycle**. Both are explicit state machines with named states observable
+    in API responses via `bookingStatus` and `assignmentStatus`, and delivered as CloudEvents
+    when a `sink` was registered at booking creation.
+
+    ## Booking lifecycle
+
+    ```
+    POST /qos-bookings
+            │
+            ▼
+      ┌─────────────┐
+      │  REQUESTED  │  Accepted; operator confirmation pending.
+      └──────┬──────┘
+             │  booking-status-changed (SCHEDULED or TERMINATED)
+             ▼
+      ┌─────────────┐
+      │  SCHEDULED  │  Confirmed; QoS resources reserved for future start time.
+      └──────┬──────┘
+             │  at start time → ACTIVATED; booking-status-changed (TERMINATED if cancelled)
+             ▼
+      ┌─────────────┐
+      │   ACTIVATED │  Booking window open; QoS resources live.
+      └──────┬──────┘
+             │  booking-status-changed (TERMINATED)
+             ▼
+      ┌─────────────┐
+      │ TERMINATED  │  Terminal. bookingId no longer addressable.
+      └─────────────┘
+    ```
+
+    | State | Meaning | Notification sent |
+    |---|---|---|
+    | `REQUESTED` | Booking accepted and `bookingId` assigned; operator is validating network availability. `statusInfo: VALIDATION_PENDING`. | None — poll or await `booking-status-changed`. |
+    | `SCHEDULED` | Confirmed; QoS resources reserved. Devices may be assigned now. `statusInfo: BOOKING_SCHEDULED`. | `booking-status-changed` (`bookingStatus: SCHEDULED`). |
+    | `ACTIVATED` | Booking window open; QoS resources live. `statusInfo: BOOKING_ACTIVATED`. | `booking-status-changed` (`bookingStatus: ACTIVATED`). |
+    | `TERMINATED` | Terminal. `statusInfo` carries the reason: `BOOKING_CANCELLED`, `BOOKING_EXPIRED`, `DURATION_EXPIRED`, `SERVICE_NOT_AVAILABLE`, `QOS_PROFILE_NOT_SUPPORTED`, `NETWORK_TERMINATED`, or `BOOKING_UNKNOWN_ERROR`. | `booking-status-changed` (`bookingStatus: TERMINATED`). |
+
+    A booking may transition from any non-terminal state directly to `TERMINATED`.
+    For synchronous operators, `SCHEDULED` or `ACTIVATED` (when the start time is immediate) may be
+    returned directly in the `createBooking` `201` response with no `REQUESTED` intermediate state.
+
+    ## Device assignment lifecycle
+
+    A booking MUST be in `SCHEDULED` or `ACTIVATED` state before devices can be assigned.
+    Both `assignDevices` and `releaseDevices` share the same `AssignmentStatus` outcome model.
+
+    Operators may resolve assignment and release synchronously (returning the final state in the
+    operation response directly), asynchronously (returning `REQUESTED` immediately and delivering
+    the final state via notification), or in a hybrid model where the approach depends on available
+    compute resources or network conditions at the time of the request.
+
+    ```
+    POST …/devices/assign              POST …/devices/release
+            │                                  │
+            ▼                                  ▼
+      ┌───────────┐                      ┌───────────┐
+      │ REQUESTED │  (deferred only)     │ REQUESTED │  (deferred only)
+      └─────┬─────┘                      └─────┬─────┘
+            │  assignment-status-changed       │  assignment-status-changed
+            ▼                                  ▼
+      ASSIGNED | PARTIAL_SUCCESS | FAILURE    RELEASED | PARTIAL_SUCCESS | FAILURE
+    ```
+
+    | State | Operation | Meaning |
+    |---|---|---|
+    | `REQUESTED` | assign, release | Request accepted; final state will arrive via `assignment-status-changed` notification. |
+    | `ASSIGNED` | assign only | All requested devices are now assigned to the booking. |
+    | `RELEASED` | release only | All requested devices have been released from the booking. |
+    | `PARTIAL_SUCCESS` | assign, release | Some but not all devices were processed. The response `deviceDetails` enumerates the successfully processed devices; absent devices were not. `statusInfo` provides the reason (e.g.  `DEVICE_NOT_FOUND`). |
+    | `FAILURE` | assign, release | Operation failed for all requested devices. `statusInfo` provides the reason. |
+
+    ## Notifications
+
+    All status-change events — booking and assignment — are delivered to the single `sink`
+    registered during `createBooking`. No separate sink is registered for `assignDevices`
+    or `releaseDevices`.
+
+    | CloudEvent type | Fired when | Schema |
+    |---|---|---|
+    | `…v0.booking-status-changed` | Booking transitions to `SCHEDULED`, `ACTIVATED`, or `TERMINATED` | `EventBookingStatusChanged` |
+    | `…v0.assignment-status-changed` | Assign or release resolves from `REQUESTED` to a final state | `EventAssignmentStatusChanged` |
+
+    The `REQUESTED` intermediate state is not notified; it is observable only via polling
+    (`GET /qos-bookings/{bookingId}`).
+
     <!-- CAMARA:MANDATORY:authorization-and-authentication:BEGIN -->
+
     # Authorization and authentication
 
     The "Camara Security and Interoperability Profile" provides details of how an API consumer requests an access token. Please refer to Identity and Consent Management (https://github.com/camaraproject/IdentityAndConsentManagement/) for the released version of the profile.
@@ -43,6 +132,8 @@ info:
 
     In cases where personal data is processed by the API and users can exercise their rights through mechanisms such as opt-in and/or opt-out, the use of three-legged access tokens is mandatory. This ensures that the API remains in compliance with privacy regulations, upholding the principles of transparency and user-centric privacy-by-design.
     <!-- CAMARA:MANDATORY:authorization-and-authentication:END -->
+
+    <!-- CAMARA:MANDATORY:identifying-device-from-access-token:BEGIN -->
 
     # Identifying the device from the access token
 
@@ -54,9 +145,24 @@ info:
     This approach simplifies API usage for API consumers using a three-legged access token to invoke the API by relying on the information that is associated with the access token and was identified during the authentication process.
 
     ## Error handling:
+
     - If the subject cannot be identified from the access token and the optional `device` object is not included in the request, then the server will return an error with the `422 MISSING_IDENTIFIER` error code.
 
     - If the subject can be identified from the access token and the optional `device` object is also included in the request, then the server will return an error with the `422 UNNECESSARY_IDENTIFIER` error code. This will be the case even if the same device is identified by these two methods, as the server is unable to make this comparison.
+    <!-- CAMARA:MANDATORY:identifying-device-from-access-token:END -->
+
+    # Three-legged access token restrictions
+
+    This API supports both two-legged and three-legged access tokens. Two-legged tokens are
+    used by operators or enterprise applications managing bookings and device assignments on
+    behalf of multiple devices. Three-legged tokens are used in end-user self-service scenarios
+    where the subject device is uniquely identified from the token; in these operations the
+    `device` or `devices` field MUST NOT be provided in the request body, as the subject is
+    resolved from the token. Because a three-legged token identifies exactly one device,
+    operations that assign or release multiple devices require a two-legged token. An operator
+    may adopt a pattern where a multi-device booking is created using a two-legged token and
+    individual end-users subsequently self-assign or self-release their own device using a
+    three-legged token.
 
     # Multi-SIM scenario handling
 
@@ -67,17 +173,47 @@ info:
     - Identifying the intended device from a unique identifier for that device, such as its source IP address and port
     - Check with the SIM provider whether a unique "secondary" phone number is already associated with each device, and use the secondary phone number to identify the intended device if available
 
+    # API-specific error behaviour
+
+    The following summarises error codes specific to this API, their trigger conditions,
+    and which operations each applies to. Standard CAMARA error codes (`401`, `403`, `429`,
+    `500`, `503`) are not repeated here; refer to `CAMARA_common.yaml` for their definitions.
+
+    ## API-specific 400 codes
+
+    | Code | When raised | Operations |
+    |---|---|---|
+    | `INVALID_ARGUMENT` | Malformed request body, unrecognised field, or invalid field value. | All write operations |
+    | `OUT_OF_RANGE` | A numeric value (e.g. device count) exceeds its declared bounds. | `createBooking`, `assignDevices` |
+    | `QOS_BOOKING_AND_ASSIGNMENT.DURATION_OUT_OF_RANGE` | The requested booking duration exceeds the maximum allowed by the selected QoS profile. | `createBooking` only |
+    | `INVALID_SINK` | The `sink` URL is not a valid callback endpoint or uses an unsupported protocol. | `createBooking` only |
+
+    ## API-specific 409 codes
+
+    | Code | When raised | Operations |
+    |---|---|---|
+    | `INCOMPATIBLE_STATE` | The operation is not valid for the booking's current `bookingStatus`. Examples: assigning devices to a `TERMINATED` booking; `deleteBooking` when devices remain assigned (provider-dependent — see `deleteBooking` description). | `createBooking`, `deleteBooking`, `assignDevices`, `releaseDevices` |
+    | `ABORTED` | A concurrent operation of the same type is already in progress for the same booking. Retry after the in-progress operation resolves. | `assignDevices`, `releaseDevices` |
+    | `ALREADY_EXISTS` | A booking with identical parameters already exists for this consumer. | `createBooking` |
+    | `CONFLICT` | A duplicate resource entry was detected. | `createBooking` |
+
+    > **Note:** `ALREADY_EXISTS` and `CONFLICT` do not apply to read operations or
+    > `deleteBooking` / `releaseDevices`. These codes are included in the shared `Generic409`
+    > definition and will be scoped to individual operations in a future cleanup.
+
     <!-- CAMARA:MANDATORY:additional-error-responses:BEGIN -->
+
     # Additional CAMARA error responses
 
     The list of error codes in this API specification is not exhaustive. Therefore the API specification MAY not document some non-mandatory error statuses as indicated in `CAMARA API Design Guide`.
 
-    Please refer to the `CAMARA_common.yaml` of the Commonalities Release associated to this API version for a complete list of error responses. The applicable Commonalities Release can be identified in the `API Readiness Checklist` document associated to this API version.
+    Please refer to the `CAMARA_common.yaml` of the Commonalities Release associated to this API version for a complete list of error responses. The applicable Commonalities Release can be identified from the `x-camara-commonalities` field, the changelog and the metadata of the released API version.
 
     As a specific rule, error `501 - NOT_IMPLEMENTED` can be only a possible error response if it is explicitly documented in the API.
     <!-- CAMARA:MANDATORY:additional-error-responses:END -->
 
     <!-- CAMARA:MANDATORY:request-body-strictness:BEGIN -->
+
     # Request body strictness
 
     This API rejects requests with JSON request bodies that contain properties not declared in this specification, at any nesting level. Unknown properties result in a `400 INVALID_ARGUMENT` response.
@@ -116,14 +252,16 @@ paths:
       summary: This operation reserves required QoS in advance up to a certain number of devices in certain serviceArea and time slot. The devices have to be attached with a subsequent operation.
       description: |
         This operation reserves a Quality of Service (QoS) booking for a specified number of devices, service area, and scheduled time/duration.
-        Devices can be assigned to the booking at any time after the reservation is successful and before the scheduled end-time.
+        Devices can be assigned to the booking at any time after the reservation is confirmed and before the scheduled end-time.
         - `Pre-assigned devices :` These devices will be automatically provisioned and activated with the requested QoS profile exactly when the scheduled start time arrives.
         - `Late-assigned devices:` Devices assigned after the schedule starts (but before it ends) will be provisioned and activated with the requested QoS profile immediately upon assignment.
         This operation will return with the following responses:
-        - `HTTP 201 (status: SUCCESSFUL):` The operator was able to confirm the booking immediately.
-        - `HTTP 202 (status: PENDING).  :` The operator is unable to confirm immediately, and the booking status is pending. A subsequent notification will be sent to confirm the final status, if available.
-        - `HTTP 4xx (Failure Condition) :` The operator determined that the booking is unavailable. The response will include specific status codes and descriptions detailing the error.
-        - Respective `statusInfo` contains additional information under certain conditions.
+        - `HTTP 201 (bookingStatus: SCHEDULED):` The operator confirmed the booking; the start time is in the future.
+        - `HTTP 201 (bookingStatus: ACTIVATED):` The operator confirmed the booking; the start time is now or in the past and the window is live.
+        - `HTTP 201 (bookingStatus: TERMINATED):` The operator determined synchronously that the booking cannot be fulfilled. `statusInfo` provides the reason.
+        - `HTTP 201 (bookingStatus: REQUESTED):` The booking resource is created and a `bookingId` is returned, but operator confirmation is still pending. A `booking-status-changed` notification will be sent to the registered `sink` with the final outcome (`SCHEDULED`, `ACTIVATED`, or `TERMINATED`).
+        - `HTTP 4xx (Failure Condition):` The request itself was invalid. The response will include specific error codes and descriptions.
+        - `statusInfo` contains additional information under certain conditions.
       operationId: createBooking
       parameters:
         - $ref: "#/components/parameters/x-correlator"
@@ -177,7 +315,15 @@ paths:
                 - notificationsBearerAuth: []
       responses:
         "201":
-          description: Booking creation is successful.
+          description: |
+            Booking resource created. `bookingStatus` values and `bookingId` presence rules:
+
+            | `bookingStatus` | `bookingId` present | Meaning |
+            |---|:---:|---|
+            | `SCHEDULED` | Yes | Operator confirmed; start time is in the future. |
+            | `ACTIVATED` | Yes | Operator confirmed; start time is now or in the past and the window is live. |
+            | `REQUESTED` | Yes | Resource created and `bookingId` assigned; operator confirmation is still in progress. A `booking-status-changed` notification delivers the final outcome. |
+            | `TERMINATED` | No | Operator rejected the booking synchronously; no resource was created. `statusInfo` provides the reason (e.g. `SERVICE_NOT_AVAILABLE`). |
           headers:
             x-correlator:
               $ref: "#/components/headers/x-correlator"
@@ -188,18 +334,8 @@ paths:
               examples:
                 BOOKING_SUCCESSFUL:
                   $ref: "#/components/examples/BOOKING_SUCCESSFUL"
-        "202":
-          description: |
-            Booking request is accepted but pending.
-            Confirmation of success or failure will be sent as a callback notification.
-          headers:
-            x-correlator:
-              $ref: "#/components/headers/x-correlator"
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/BookingOutput"
-              examples:
+                BOOKING_FAILURE:
+                  $ref: "#/components/examples/BOOKING_FAILURE"
                 BOOKING_PENDING:
                   $ref: "#/components/examples/BOOKING_PENDING"
         "400":
@@ -208,8 +344,6 @@ paths:
           $ref: "#/components/responses/Generic401"
         "403":
           $ref: "#/components/responses/Generic403"
-        "404":
-          $ref: "#/components/responses/Generic404"
         "409":
           $ref: "#/components/responses/Generic409"
         "422":
@@ -227,9 +361,10 @@ paths:
       summary: Get the Booking information for a given QoS Booking identified by `bookingId`.
       description: |
         This operation is synchronous and retrieves the details of an existing Quality of Service (QoS) booking using its unique identifier (`bookingId`). This `bookingId` is the identifier returned by the initial booking operation upon successful creation.
+
         Response Scenarios:
-          - `HTTP 200 (status: SUCCESSFUL):` The booking details are successfully retrieved and returned in the response body along with the remaining number of devices still can be assigned to the booking.
-          - `HTTP 4xx (Failure Condition) :` The request failed, and an appropriate HTTP 4xx error code is returned with a specific status and description.
+          - `HTTP 200:` The booking details are successfully retrieved and returned in the response body. The `bookingStatus` field reflects the current booking lifecycle state (`REQUESTED`, `SCHEDULED`, `ACTIVATED`, or `TERMINATED`) and `remainingDevices` shows how many devices can still be assigned.
+          - `HTTP 4xx:` The request failed. An appropriate HTTP 4xx error code is returned with a specific error code and description.
       operationId: getBookingById
       parameters:
         - $ref: "#/components/parameters/BookingId"
@@ -269,31 +404,30 @@ paths:
         This operation cancels and deletes a specific QoS booking using its unique identifier and releases the resources related to that booking. It supports both synchronous and asynchronous processing.
         Constraints & Notes:
           - The Quality of Service (QoS) booking must have been created by the same API client identified in the access token.
-          - The SUCCESSFUL and FAILURE conditions for a deletion are dependent on the operator's specific implementation.
           - Operators SHOULD properly document their `Booking Cancellation` behavior with clear policies and the respective terms and conditions.
+          - **Behavior when devices are still assigned is implementation-defined and MUST be documented by the API provider:**
+            - Some providers will reject the DELETE and return `409 INCOMPATIBLE_STATE`, requiring the consumer to release all devices first via `POST /qos-bookings/{bookingId}/devices/release`.
+            - Other providers will automatically release all assigned devices as part of the DELETE and return `204 No Content`.
+            - API consumers SHOULD release all assigned devices before invoking DELETE for portable, provider-agnostic behavior.
+          - **Cancellation CloudEvent delivery:** When deletion is processed asynchronously (202), the `CANCELLED` `booking-status-changed` CloudEvent is delivered to the `sink` registered at booking creation. Consumers that require cancellation notifications MUST provide a `sink` when creating the booking.
         Response Scenarios:
-          - `HTTP 200 (status: SUCCESSFUL):` The booking was deleted immediately (synchronous success).
-          - `HTTP 202 (status: PENDING).  :` The request has been accepted for processing, but the deletion is not yet complete (asynchronous processing). A subsequent notification will be sent to confirm the final status.
-          - `HTTP 4xx (Failure Condition) :` The request failed, and an appropriate HTTP 4xx error code is returned with a specific status and description.
+          - `HTTP 204:` The booking was cancelled immediately (synchronous success). No response body is returned.
+          - `HTTP 202 (bookingStatus: REQUESTED):` The request has been accepted for processing, but the deletion is not yet complete. A `booking-status-changed` notification will be sent with `bookingStatus` = `TERMINATED` and `statusInfo` = `BOOKING_CANCELLED`.
+          - `HTTP 4xx (Failure Condition):` The request failed, and an appropriate HTTP 4xx error code is returned with a specific status and description.
       operationId: deleteBooking
       parameters:
         - $ref: "#/components/parameters/BookingId"
         - $ref: "#/components/parameters/x-correlator"
       responses:
-        "200":
-          description: Booking deleted. `status` in the response will be `SUCCESSFUL` and `statusInfo` will be `BOOKING_CANCELLED`
+        "204":
+          description: Booking cancelled successfully. No response body is returned.
           headers:
             x-correlator:
               $ref: "#/components/headers/x-correlator"
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/BookingOutput"
-              examples:
-                BOOKING_CANCELLED:
-                  $ref: "#/components/examples/BOOKING_CANCELLED"
         "202":
-          description: Deletion request accepted to be processed. It applies for an async deletion process. `status` in the response will be `PENDING` and `statusInfo` will be `DELETE_REQUESTED`
+          description: |
+            Deletion request accepted for asynchronous processing. `bookingStatus` = `REQUESTED`, `statusInfo` = `DELETE_REQUESTED`.
+            A `booking-status-changed` CloudEvent with `bookingStatus` = `TERMINATED` and `statusInfo` = `BOOKING_CANCELLED` will be sent to the `sink` registered at booking creation.
           headers:
             x-correlator:
               $ref: "#/components/headers/x-correlator"
@@ -327,10 +461,10 @@ paths:
       summary: Assign one or more devices to an existing QoS Booking identified by `bookingId`
       description: |
         This endpoint allows the end user to assign one or more devices to the existing QoS Booking.
-        - If the assignment is successful for all the devices, the call will return 201 success code with status `SUCCESSFUL` and the network is available for the said devices to connect and use them at the requested time
+        - If the assignment is successful for all the devices, the call will return 201 success code with assignmentStatus `ASSIGNED` and the network is available for the said devices to connect and use them at the requested time
         - If the assignment request failed for some reason, this call we be retured with 4xx error code with appropirate status codes
-        - This is an asynchronous call,  and status = `PENDING` if the network is still working on your request. A callback will come with appropriate status.
-        - If the network could not assign all the requested devices, then status = `PARTIAL_SUCCESS` and the `statusInfo` will have additional information.
+        - This is an asynchronous call, and assignmentStatus = `REQUESTED` if the network is still processing your request. A callback will deliver the final assignmentStatus.
+        - If the network could not assign all the requested devices, then assignmentStatus = `PARTIAL_SUCCESS` and the `statusInfo` will have additional information.
         - If a 2-legged access token is used, then the device details SHOULD BE provided as part of the input, and the output will return the array of actually assigned devices.
         - If a 3-legged access token is used, then the device information are identified from the access token, so only one device is implicitly assigned, and the return value may not contain the assigned device information
       operationId: assignDevices
@@ -445,8 +579,8 @@ paths:
       summary: Get the list of devices assigned to an existing QoS Booking
       description: |
         This endpoint allows the end user to retrieve the list of devices assigned to the existing QoS Booking.
-        - status = `SUCCESSFUL` if the operation is successful
-        - status = `FAILURE`  if the operation is unsuccessful then the `statusInfo` will have more information.
+        - assignmentStatus = `ASSIGNED` if the operation is successful
+        - assignmentStatus = `FAILURE`  if the operation is unsuccessful then the `statusInfo` will have more information.
         - GET may not return the identifying details of all the devices assigned to the booking. There are certain situations, identifying details of certain devices can't be disclosed because of privacy laws, jurisdiction restrictions, and some legal requirements.
           In such a situation the operator SHOULD properly communicate this to the API consumer that device identifiers of certain devices are not disclosed. `statusInfo` = `DEVICE_DISCLOSURE_POLICY_APPLIED`
         - The API consumer can determine; how many devices are actually in the booking from 'bookingDetails'; but may not know the identifying details of all those devices.
@@ -480,8 +614,6 @@ paths:
           $ref: "#/components/responses/Generic403"
         "404":
           $ref: "#/components/responses/Generic404"
-        "422":
-          $ref: "#/components/responses/Generic422"
         "429":
           $ref: "#/components/responses/Generic429"
       security:
@@ -526,7 +658,7 @@ paths:
             Example:
 
               If an end-user requests to release two devices but the network can release only one:
-              - The `status` will be `PARTIAL_SUCCESS`.
+              - The `assignmentStatus` will be `PARTIAL_SUCCESS`.
               - The `statusInfo` field will contain additional details.
 
               The returned message body will also contain the list of the actual devices that were released.
@@ -620,10 +752,6 @@ paths:
           $ref: "#/components/responses/Generic401"
         "403":
           $ref: "#/components/responses/Generic403"
-        "404":
-          $ref: "#/components/responses/Generic404"
-        "409":
-          $ref: "#/components/responses/Generic409"
         "422":
           $ref: "#/components/responses/Generic422"
         "429":
@@ -664,11 +792,11 @@ components:
 
     BookingInput:
       description: |
-        Basic input that are required to book QoS in advance. `numDevices` represents the maximum number of devices the enduser wants the operator to reserve in advance.
+        Basic input that are required to book QoS in advance. `bookingDeviceCount` represents the maximum number of devices the enduser wants the operator to reserve in advance.
       allOf:
         - type: object
           properties:
-            numDevices:
+            bookingDeviceCount:
               $ref: "#/components/schemas/DeviceCount"
             qosProfile:
               $ref: "#/components/schemas/QosProfileName"
@@ -702,7 +830,7 @@ components:
           properties:
             bookingId:
               $ref: "#/components/schemas/BookingId"
-            totalDevices:
+            bookingDeviceCount:
               $ref: "#/components/schemas/DeviceCount"
             remainingDevices:
               $ref: "#/components/schemas/RemainingDeviceCount"
@@ -714,6 +842,8 @@ components:
               $ref: "#/components/schemas/Duration"
             serviceArea:
               $ref: "../common/CAMARA_common.yaml#/components/schemas/Area"
+            bookingStatus:
+              $ref: "#/components/schemas/BookingStatus"
           required:
             - bookingId
             - remainingDevices
@@ -726,17 +856,17 @@ components:
       description: |
         - If the booking endpoint returns synchronously, `BookingOutput` will be part of the return message body. For async success a follow-up `get` endpoint will return the details of the actual booking.
         - It returns original number of devices that are requested as well as the remaining number of devices in the booking that can be assigned
-        `remainingDevices` >= 0 and <= `totalDevices`
+        `remainingDevices` >= 0 and <= `bookingDeviceCount`
         - Once a device is successfully assigned to the booking, `remainingDevices` will be reduced by 1, and once the device is released then it will be incremented by 1
         - Booking Information is also returned as part of the message body when the devices are successfully assigned to the booking.
-        - `bookingId` may not be present if the booking was not successful
+        - `bookingId` is present when `bookingStatus` is `REQUESTED`, `SCHEDULED`, or `ACTIVATED` — the booking resource exists and is addressable. It is absent when `bookingStatus` is `TERMINATED` at creation time, meaning the operator rejected the booking synchronously and no resource was created.
 
       allOf:
         - type: object
           properties:
             bookingId:
               $ref: "#/components/schemas/BookingId"
-            totalDevices:
+            bookingDeviceCount:
               $ref: "#/components/schemas/DeviceCount"
             remainingDevices:
               $ref: "#/components/schemas/RemainingDeviceCount"
@@ -748,8 +878,8 @@ components:
               $ref: "#/components/schemas/Duration"
             serviceArea:
               $ref: "../common/CAMARA_common.yaml#/components/schemas/Area"
-            status:
-              $ref: "#/components/schemas/Status"
+            bookingStatus:
+              $ref: "#/components/schemas/BookingStatus"
             statusInfo:
               $ref: "#/components/schemas/BookingStatusInfo"
           required:
@@ -758,7 +888,7 @@ components:
             - startTime
             - duration
             - serviceArea
-            - status
+            - bookingStatus
 
     DeviceAssignmentInput:
       description: |
@@ -789,7 +919,7 @@ components:
          - In some situations (ex: assignments using 3-legged access token) the device details should not be disclosed as per the privacy and other legal requirements.
          - For example:
            - If there are 10 devices assigned in a booking; but the GET operation returns only 7; It means 3 devices can't be disclosed
-           - The source of truth is in the following properties in the booking details: `totalDevices` and `remainingDevices`.
+           - The source of truth is in the following properties in the booking details: `bookingDeviceCount` and `remainingDevices`.
            - In such a situation the operator SHOULD set  `statusInfo` as `DEVICE_DISCLOSURE_POLICY_APPLIED` to clearly communicate the fact that some devices are not disclosed.
 
       allOf:
@@ -799,12 +929,12 @@ components:
               $ref: "#/components/schemas/BookingDetails"
             devices:
               $ref: "#/components/schemas/DeviceResponseArray"
-            status:
-              $ref: "#/components/schemas/Status"
+            assignmentStatus:
+              $ref: "#/components/schemas/AssignmentStatus"
             statusInfo:
               $ref: "#/components/schemas/AssignmentStatusInfo"
           required:
-            - status
+            - assignmentStatus
 
     RetrieveBookingByDevice:
       description: Attributes to look for QoS Booking
@@ -841,7 +971,7 @@ components:
       description: Event type values for QoS Booking and Assignment notifications
       type: string
       enum:
-        - "org.camaraproject.qos-booking-and-assignment.v0.status-changed"
+        - "org.camaraproject.qos-booking-and-assignment.v0.booking-status-changed"
         - "org.camaraproject.qos-booking-and-assignment.v0.assignment-status-changed"
 
     QosBookingNotificationEvent:
@@ -857,11 +987,11 @@ components:
       discriminator:
         propertyName: "type"
         mapping:
-          org.camaraproject.qos-booking-and-assignment.v0.status-changed: "#/components/schemas/EventBookingStatusChanged"
+          org.camaraproject.qos-booking-and-assignment.v0.booking-status-changed: "#/components/schemas/EventBookingStatusChanged"
           org.camaraproject.qos-booking-and-assignment.v0.assignment-status-changed: "#/components/schemas/EventAssignmentStatusChanged"
 
     EventBookingStatusChanged:
-      description: Event to notify a QoS Booking status change
+      description: Event to notify a QoS Booking lifecycle status change
       allOf:
         - $ref: "#/components/schemas/QosBookingNotificationEvent"
         - type: object
@@ -871,12 +1001,12 @@ components:
               description: Event details depending on the event type
               required:
                 - bookingDetails
-                - status
+                - bookingStatus
               properties:
                 bookingDetails:
                   $ref: "#/components/schemas/BookingOutput"
-                status:
-                  $ref: "#/components/schemas/StatusChanged"
+                bookingStatus:
+                  $ref: "#/components/schemas/BookingStatusChanged"
                 statusInfo:
                   $ref: "#/components/schemas/BookingStatusInfo"
           required:
@@ -892,100 +1022,119 @@ components:
               type: object
               description: Event details depending on the event type
               required:
-                - status
+                - assignmentStatus
                 - deviceDetails
               properties:
                 deviceDetails:
                   $ref: "#/components/schemas/DeviceAssignmentOutput"
-                status:
-                  $ref: "#/components/schemas/StatusChanged"
+                assignmentStatus:
+                  $ref: "#/components/schemas/AssignmentStatusChanged"
                 statusInfo:
                   $ref: "#/components/schemas/AssignmentStatusInfo"
           required:
             - data
 
-    Status:
+    AssignmentStatus:
       description: |
-        The current status of the requests in any of the endpoints in Booking or Assignment. The status can be one of the following:
-        * `PENDING` - The request is still being processed. For booking, booking is requested and for assignments, the request is pending. 'statusInfo' may have additional information.
-        * `SUCCESSFUL` - The request is processed successfully. This may happen immediately.  The state will go to PENDING and then back to SUCCESSFUL in certain conditions.
-        * `PARTIAL_SUCCESS` -  The request is processed with partial success - applicable to device assignments.  `statusInfo` may have additional information. This enum is optional, and useful if the operator wants to communicate partial success.
-        * `FAILURE` - The request has been processed but failed. `statusInfo` may provide additional information about the reason for the unavailability.
+        The outcome status of a device assignment or release operation. The status can be one of the following:
+        * `REQUESTED` - The request has been accepted but is still being processed asynchronously. A callback (`EventAssignmentStatusChanged`) will deliver the final outcome.
+        * `ASSIGNED` - All requested devices are now assigned to the booking.
+        * `PARTIAL_SUCCESS` - The request completed with partial success; some but not all devices were assigned or released. `statusInfo` has additional information.
+        * `RELEASED` - One or more devices have been successfully released from the booking. Used exclusively by the release operation.
+        * `FAILURE` - The request failed. `statusInfo` may provide additional information about the reason.
       type: string
       enum:
-        - PENDING
-        - SUCCESSFUL
+        - REQUESTED
+        - ASSIGNED
         - PARTIAL_SUCCESS
+        - RELEASED
         - FAILURE
 
-    StatusChanged:
+    AssignmentStatusChanged:
       description: |
-        The current status of PENDING can be changed to SUCCESSFUL or PARTIAL_SUCCESS or FAILURE.
-        In some situations (rare situations) a SUCCESSFUL booking or a device assignment may turn into a FAILURE because of natural disasters, catastrophic events, or for a unknown reason.
-        In such a situations 'statusInfo' may provide additional information about the reason for the unavailability
+        The resolved status delivered in an `EventAssignmentStatusChanged` callback after a prior `REQUESTED` outcome.
+        * `ASSIGNED` - All requested devices are assigned to the booking.
+        * `PARTIAL_SUCCESS` - The assignment completed with partial success.
+        * `RELEASED` - The release operation completed; one or more devices were released from the booking.
+        * `FAILURE` - The operation failed. In rare cases a previously successful assignment may also transition to `FAILURE` due to a catastrophic network event; `statusInfo` will provide additional context.
       type: string
       enum:
-        - SUCCESSFUL
+        - ASSIGNED
         - PARTIAL_SUCCESS
+        - RELEASED
         - FAILURE
+
+    BookingStatus:
+      description: |
+        The lifecycle state of a QoS Booking. The booking status can be one of the following:
+        * `REQUESTED` - The booking request has been accepted but the operator has not yet confirmed availability. A `booking-status-changed` notification will deliver the final state.
+        * `SCHEDULED` - The booking has been confirmed and is reserved for a future start time. Devices may be assigned now.
+        * `ACTIVATED` - The booking window is open and QoS resources are live. Assigned devices may use them subject to eligibility.
+        * `TERMINATED` - The booking has reached a terminal state. The `bookingId` is no longer valid. `statusInfo` provides the reason (`BOOKING_CANCELLED`, `BOOKING_EXPIRED`, `SERVICE_NOT_AVAILABLE`, `QOS_PROFILE_NOT_SUPPORTED`, `NETWORK_TERMINATED`, `DURATION_EXPIRED`, or `BOOKING_UNKNOWN_ERROR`).
+      type: string
+      enum:
+        - REQUESTED
+        - SCHEDULED
+        - ACTIVATED
+        - TERMINATED
+
+    BookingStatusChanged:
+      description: |
+        Status values used in booking status-change notifications (EventBookingStatusChanged).
+        Excludes REQUESTED because notification callbacks only fire when the operator has
+        reached a confirmed or terminal state after a prior REQUESTED state.
+      type: string
+      enum:
+        - SCHEDULED
+        - ACTIVATED
+        - TERMINATED
 
     BookingStatusInfo:
       description: |
-        This schema provides a detailed status of a booking request
-        * `DURATION_EXPIRED` - Session terminated due to requested duration expired
-        * `NETWORK_TERMINATED` - Network terminated the QoS Booking for unknown reasons
-        * `DELETE_REQUESTED`- User requested the deletion of the QoS Booking
-        * `VALIDATION_PENDING` - The validation is pending. The end user will get a callback with the availability of the booking
-        * `SERVICE_NOT_AVAILABLE` - The requested booking could not be fulfilled because of operator could not support the service area/number of devices/qosProfile in the requested time
-        * `QOS_PROFILE_NOT_SUPPORTED` - The requested QoS Profile is not supported by the operator
-        * `BOOKING_UNKNOWN_ERROR` - An unknown error happened while booking
-        * `BOOKING_ACCEPTED` - The requested booking is completed successfully.
-        * `BOOKING_CANCELLED` - The given bookingId was cancelled by the user and is no more valid.
-        * `BOOKING_EXPIRED` - Booking schedule ended, and the given bookingId is expired and is no more valid
-        * `BOOKING_ACTIVATED` - Booking schedule started and the booking is activated.
+        A free-form string providing additional context about the current booking `bookingStatus`.
+        Values are not exhaustive; API providers MAY use additional implementation-specific values.
 
+        Transition reasons for `bookingStatus: REQUESTED`:
+        * `VALIDATION_PENDING` - The booking is pending operator validation. A `booking-status-changed` notification will follow.
+
+        Transition reasons for `bookingStatus: SCHEDULED` or `ACTIVATED`:
+        * `BOOKING_SCHEDULED` - The booking was confirmed and scheduled for a future start time.
+        * `BOOKING_ACTIVATED` - Booking schedule started and the booking is activated.
+        * `DELETE_REQUESTED` - User requested deletion; async processing is in progress (`bookingStatus` transitions to `TERMINATED` on completion).
+
+        Transition reasons for `bookingStatus: TERMINATED`:
+        * `BOOKING_CANCELLED` - The booking was cancelled by the consumer or operator.
+        * `BOOKING_EXPIRED` - The booking window ended normally.
+        * `SERVICE_NOT_AVAILABLE` - The booking could not be fulfilled; the operator could not support the service area, device count, or QoS profile in the requested time.
+        * `QOS_PROFILE_NOT_SUPPORTED` - The requested QoS profile is not supported by the operator.
+        * `DURATION_EXPIRED` - The booking was terminated because the requested duration expired.
+        * `NETWORK_TERMINATED` - The network terminated the QoS booking for an unknown reason.
+        * `BOOKING_UNKNOWN_ERROR` - An unknown error occurred.
+        * `BOOKING_ACCEPTED` - Deprecated. Use `BOOKING_SCHEDULED` instead.
       type: string
-      enum:
-        - DURATION_EXPIRED
-        - NETWORK_TERMINATED
-        - DELETE_REQUESTED
-        - VALIDATION_PENDING
-        - SERVICE_NOT_AVAILABLE
-        - QOS_PROFILE_NOT_SUPPORTED
-        - BOOKING_UNKNOWN_ERROR
-        - BOOKING_ACCEPTED
-        - BOOKING_CANCELLED
-        - BOOKING_EXPIRED
-        - BOOKING_ACTIVATED
+      maxLength: 256
+      example: "BOOKING_SCHEDULED"
 
     AssignmentStatusInfo:
       description: |
-       This schema provides a detailed status of an assignment request
-        * `DEVICE_NOT_FOUND` - One or some of the devices are not found to validate and associate to booking.
-        * `DEVICE_UNKNOWN_ERROR` - One, or more, or all of devices are not assigned or not released because of unknown error.
-        * `DEVICE_DISCLOSURE_POLICY_APPLIED` - Some or all of the devices are not disclosed because of privacy, or legal requirements, or for unknown reasons.
-        * `QUOTA_EXCEEDED` - The number of devices requested to assign to a booking is more than the allocated total for the booking. Only remaining devices are assigned
-        * `VALIDATION_PENDING` - The device assignment request is pending for validation and verification
-        * `ASSIGNMENT_COMPLETED` - The request assignment of devices is successfully completed
-        * `BOOKING_INVALID` - The user requests to release a device from booking, but the booking is invalid
-        * `BOOKING_CANCELLED` - The user requests to release a device from booking, but the booking is cancelled
-        * `BOOKING_EXPIRED` - The user requests to release a device from booking, but the booking is expired and no more active
-        * `BOOKING_TERMINATED` - For unknown reasons booking is terminated by the operator. A booking callback may be issued.
-        * `RELEASE_PENDING` - Release of requested devices is currently in progress. Some might have already been released, and some are still being processed.
+        A free-form string providing additional context about the current assignment `assignmentStatus`.
+        Values are not exhaustive; API providers MAY use additional implementation-specific values.
 
+        * `ASSIGNMENT_COMPLETED` - The assignment of devices completed successfully.
+        * `DEVICE_RELEASED` - One or more devices were successfully released from the booking.
+        * `RELEASE_PENDING` - Release of requested devices is currently in progress. Some might have already been released and some are still being processed.
+        * `DEVICE_NOT_FOUND` - One or more devices could not be found or validated.
+        * `DEVICE_UNKNOWN_ERROR` - One or more devices failed to be assigned or released due to an unknown error.
+        * `DEVICE_DISCLOSURE_POLICY_APPLIED` - Some or all device identifiers are withheld due to privacy or legal requirements.
+        * `QUOTA_EXCEEDED` - The number of devices requested exceeds the remaining capacity of the booking.
+        * `VALIDATION_PENDING` - The assignment request is pending validation.
+        * `BOOKING_INVALID` - The booking referenced in the request is invalid.
+        * `BOOKING_CANCELLED` - The booking referenced has been cancelled.
+        * `BOOKING_EXPIRED` - The booking referenced has expired and is no longer active.
+        * `BOOKING_TERMINATED` - The booking was terminated by the operator.
       type: string
-      enum:
-        - DEVICE_NOT_FOUND
-        - DEVICE_UNKNOWN_ERROR
-        - DEVICE_DISCLOSURE_POLICY_APPLIED
-        - QUOTA_EXCEEDED
-        - VALIDATION_PENDING
-        - ASSIGNMENT_COMPLETED
-        - BOOKING_INVALID
-        - BOOKING_CANCELLED
-        - BOOKING_EXPIRED
-        - BOOKING_TERMINATED
-        - RELEASE_PENDING
+      maxLength: 256
+      example: "ASSIGNMENT_COMPLETED"
 
     DeviceCount:
       description: |
@@ -1169,7 +1318,7 @@ components:
       summary: Booking Request Example-1
       description: This is an example of a booking request.
       value:
-        numDevices: 15
+        bookingDeviceCount: 15
         qosProfile: "QOS_MEDIA_BROADCAST"
         startTime: "2025-10-27T15:00:00.000Z"
         duration: 3600
@@ -1190,7 +1339,7 @@ components:
       summary: Booking Request Example-2
       description: This is an example of a booking request.
       value:
-        numDevices: 27
+        bookingDeviceCount: 27
         qosProfile: "QOS_MEDIA_BROADCAST"
         startTime: "2025-10-27T15:00:00.000Z"
         duration: 3600
@@ -1214,11 +1363,11 @@ components:
 
 
     BOOKING_SUCCESSFUL:
-      summary: Booking Successful
-      description: QoS Booking is successful and valid `bookingId` is returned along with other input parameters.
+      summary: Booking Confirmed (Scheduled)
+      description: QoS Booking is confirmed and a valid `bookingId` is returned. The booking start time is in the future so `bookingStatus` is `SCHEDULED`.
       value:
         bookingId: "8e2f6f30-0a1c-4c6b-92e1-1bd05aef1c58"
-        totalDevices: 15
+        bookingDeviceCount: 15
         remainingDevices: 15
         qosProfile: "QOS_MEDIA_BROADCAST"
         startTime: "2025-10-27T15:00:00.000Z"
@@ -1229,14 +1378,14 @@ components:
             latitude: 37.735851
             longitude: -127.10066
           radius: 100
-        status: "SUCCESSFUL"
-        statusInfo: "BOOKING_ACCEPTED"
+        bookingStatus: "SCHEDULED"
+        statusInfo: "BOOKING_SCHEDULED"
 
     BOOKING_FAILURE:
-      summary: Booking Failed
-      description: QoS Booking failed, `statusInfo` has additional info. No `bookingId` will be returned.
+      summary: Booking Terminated (Declined)
+      description: The operator determined synchronously that the booking cannot be fulfilled (`bookingStatus` = `TERMINATED`). No `bookingId` is returned. `statusInfo` provides the decline reason.
       value:
-        totalDevices: 5
+        bookingDeviceCount: 5
         remainingDevices: 5
         qosProfile: "QOS_MEDIA_BROADCAST"
         startTime: "2025-10-27T15:00:00.000Z"
@@ -1247,14 +1396,15 @@ components:
             latitude: 37.735851
             longitude: -127.10066
           radius: 100
-        status: "FAILURE"
+        bookingStatus: "TERMINATED"
         statusInfo: "SERVICE_NOT_AVAILABLE"
 
     BOOKING_PENDING:
-      summary: Booking Pending
-      description: QoS Booking request is pending, `statusInfo` has additional info. No `bookingId` will be returned.
+      summary: Booking Requested (Pending Confirmation)
+      description: QoS Booking resource is created and a `bookingId` is returned, but operator confirmation is still in progress (`bookingStatus` = `REQUESTED`). A `booking-status-changed` notification will deliver the final outcome (`SCHEDULED`, `ACTIVATED`, or `TERMINATED`).
       value:
-        totalDevices: 5
+        bookingId: "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+        bookingDeviceCount: 5
         remainingDevices: 5
         qosProfile: "QOS_MEDIA_BROADCAST"
         startTime: "2025-10-27T15:00:00.000Z"
@@ -1265,15 +1415,15 @@ components:
             latitude: 37.735851
             longitude: -127.10066
           radius: 100
-        status: "PENDING"
+        bookingStatus: "REQUESTED"
         statusInfo: "VALIDATION_PENDING"
 
     BOOKING_RETRIEVED:
       summary: Retrieve Booking
-      description: Retrieve booking information from its `bookingId`. `statusInfo` will provide the current status of the booking.
+      description: Retrieve booking information from its `bookingId`. `bookingStatus` and `statusInfo` reflect the current booking lifecycle state.
       value:
         bookingId: "8e2f6f30-0a1c-4c6b-92e1-1bd05aef1c58"
-        totalDevices: 15
+        bookingDeviceCount: 15
         remainingDevices: 15
         qosProfile: "QOS_MEDIA_BROADCAST"
         startTime: "2025-10-27T15:00:00.000Z"
@@ -1284,15 +1434,15 @@ components:
             latitude: 37.735851
             longitude: -127.10066
           radius: 100
-        status: "SUCCESSFUL"
+        bookingStatus: "ACTIVATED"
         statusInfo: "BOOKING_ACTIVATED"
 
     BOOKING_CANCELLED:
-      summary: Cancel an existing booking
-      description: Delete a booking using a  valid `bookingId`.  Delete operation is successful.
+      summary: Booking Cancelled (notification payload)
+      description: Example `booking-status-changed` CloudEvent payload when a booking is successfully cancelled.
       value:
         bookingId: "8e2f6f30-0a1c-4c6b-92e1-1bd05aef1c58"
-        totalDevices: 15
+        bookingDeviceCount: 15
         remainingDevices: 15
         qosProfile: "QOS_MEDIA_BROADCAST"
         startTime: "2025-10-27T15:00:00.000Z"
@@ -1303,7 +1453,7 @@ components:
             latitude: 37.735851
             longitude: -127.10066
           radius: 100
-        status: "SUCCESSFUL"
+        bookingStatus: "TERMINATED"
         statusInfo: "BOOKING_CANCELLED"
 
     CANCELLATION_PENDING:
@@ -1311,7 +1461,7 @@ components:
       description: Delete a booking using a  valid `bookingId`.  Delete operation is pending as operator may need more time to process the request.
       value:
         bookingId: "8e2f6f30-0a1c-4c6b-92e1-1bd05aef1c58"
-        totalDevices: 15
+        bookingDeviceCount: 15
         remainingDevices: 7
         qosProfile: "QOS_MEDIA_BROADCAST"
         startTime: "2025-10-27T15:00:00.000Z"
@@ -1322,7 +1472,7 @@ components:
             latitude: 37.735851
             longitude: -127.10066
           radius: 100
-        status: "PENDING"
+        bookingStatus: "REQUESTED"
         statusInfo: "DELETE_REQUESTED"
 
     ASSIGNMENT_INPUT_1:
@@ -1363,7 +1513,7 @@ components:
       value:
         bookingDetails:
           bookingId: "8e2f6f30-0a1c-4c6b-92e1-1bd05aef1c58"
-          totalDevices: 15
+          bookingDeviceCount: 15
           remainingDevices: 11
           qosProfile: "QOS_MEDIA_BROADCAST"
           startTime: "2025-10-27T15:00:00.000Z"
@@ -1381,7 +1531,7 @@ components:
               publicAddress: "203.0.113.0"
               publicPort: 59765
           - ipv6Address: "2001:db8:85a3:8d3:1319:8a2e:370:7344"
-        status: "SUCCESSFUL"
+        assignmentStatus: "ASSIGNED"
         statusInfo: "ASSIGNMENT_COMPLETED"
 
     ASSIGNMENT_PARTIAL_SUCCESS:
@@ -1390,7 +1540,7 @@ components:
       value:
         bookingDetails:
           bookingId: "8e2f6f30-0a1c-4c6b-92e1-1bd05aef1c58"
-          totalDevices: 15
+          bookingDeviceCount: 15
           remainingDevices: 13
           qosProfile: "QOS_MEDIA_BROADCAST"
           startTime: "2025-10-27T15:00:00.000Z"
@@ -1406,7 +1556,7 @@ components:
           - ipv4Address:
               publicAddress: "203.0.113.0"
               publicPort: 59765
-        status: "PARTIAL_SUCCESS"
+        assignmentStatus: "PARTIAL_SUCCESS"
         statusInfo: "ASSIGNMENT_COMPLETED"
 
     ASSIGNMENT_PENDING:
@@ -1415,7 +1565,7 @@ components:
       value:
         bookingDetails:
           bookingId: "8e2f6f30-0a1c-4c6b-92e1-1bd05aef1c58"
-          totalDevices: 15
+          bookingDeviceCount: 15
           remainingDevices: 15
           qosProfile: "QOS_MEDIA_BROADCAST"
           startTime: "2025-10-27T15:00:00.000Z"
@@ -1426,7 +1576,7 @@ components:
               latitude: 37.735851
               longitude: -127.10066
             radius: 100
-        status: "PENDING"
+        assignmentStatus: "REQUESTED"
         statusInfo: "VALIDATION_PENDING"
 
     ASSIGNMENT_FAILURE_1:
@@ -1435,7 +1585,7 @@ components:
       value:
         bookingDetails:
           bookingId: "8e2f6f30-0a1c-4c6b-92e1-1bd05aef1c58"
-          totalDevices: 15
+          bookingDeviceCount: 15
           remainingDevices: 15
           qosProfile: "QOS_MEDIA_BROADCAST"
           startTime: "2025-10-27T15:00:00.000Z"
@@ -1446,14 +1596,14 @@ components:
               latitude: 37.735851
               longitude: -127.10066
             radius: 100
-        status: "FAILURE"
+        assignmentStatus: "FAILURE"
         statusInfo: "QUOTA_EXCEEDED"
 
     ASSIGNMENT_FAILURE_2:
       summary: Assignment Failed for unknown booking information
-      description: Assignment request failed. Provided `bookingId` is correctly formed but not available. In such a situation, value contains only `status` and `statusInfo`.
+      description: Assignment request failed. Provided `bookingId` is correctly formed but not available. In such a situation, value contains only `assignmentStatus` and `statusInfo`.
       value:
-        status: "FAILURE"
+        assignmentStatus: "FAILURE"
         statusInfo: "BOOKING_INVALID"
 
     ASSIGNMENT_RELEASE_INPUT:
@@ -1465,11 +1615,11 @@ components:
 
     ASSIGNMENT_RELEASED:
       summary: Assignment released successfully
-      description: Assignment is cancelled successfully and the requested devices are released from booking.
+      description: The requested device was successfully released from the booking. `assignmentStatus` is `RELEASED` and `remainingDevices` is incremented by the number of released devices.
       value:
         bookingDetails:
           bookingId: "8e2f6f30-0a1c-4c6b-92e1-1bd05aef1c58"
-          totalDevices: 15
+          bookingDeviceCount: 15
           remainingDevices: 14
           qosProfile: "QOS_MEDIA_BROADCAST"
           startTime: "2025-10-27T15:00:00.000Z"
@@ -1482,8 +1632,8 @@ components:
             radius: 100
         devices:
           - phoneNumber: "+14145550101"
-        status: "SUCCESSFUL"
-        statusInfo: "ASSIGNMENT_COMPLETED"
+        assignmentStatus: "RELEASED"
+        statusInfo: "DEVICE_RELEASED"
 
     ASSIGNMENT_RELEASE_PENDING:
       summary: Release is pending for requested devices
@@ -1491,7 +1641,7 @@ components:
       value:
         bookingDetails:
           bookingId: "8e2f6f30-0a1c-4c6b-92e1-1bd05aef1c58"
-          totalDevices: 15
+          bookingDeviceCount: 15
           remainingDevices: 14
           qosProfile: "QOS_MEDIA_BROADCAST"
           startTime: "2025-10-27T15:00:00.000Z"
@@ -1504,7 +1654,7 @@ components:
             radius: 100
         devices:
           - phoneNumber: "+14145550101"
-        status: "PENDING"
+        assignmentStatus: "REQUESTED"
         statusInfo: "RELEASE_PENDING"
 
     ASSIGNMENT_RETRIEVED_1:
@@ -1513,7 +1663,7 @@ components:
       value:
         bookingDetails:
           bookingId: "8e2f6f30-0a1c-4c6b-92e1-1bd05aef1c58"
-          totalDevices: 15
+          bookingDeviceCount: 15
           remainingDevices: 13
           qosProfile: "QOS_MEDIA_BROADCAST"
           startTime: "2025-10-27T15:00:00.000Z"
@@ -1527,7 +1677,7 @@ components:
         devices:
           - phoneNumber: "+14145550101"
           - phoneNumber: "+14145550202"
-        status: "SUCCESSFUL"
+        assignmentStatus: "ASSIGNED"
         statusInfo: "ASSIGNMENT_COMPLETED"
 
     ASSIGNMENT_RETRIEVED_2:
@@ -1536,7 +1686,7 @@ components:
       value:
         bookingDetails:
           bookingId: "8e2f6f30-0a1c-4c6b-92e1-1bd05aef1c58"
-          totalDevices: 15
+          bookingDeviceCount: 15
           remainingDevices: 13
           qosProfile: "QOS_MEDIA_BROADCAST"
           startTime: "2025-10-27T15:00:00.000Z"
@@ -1547,7 +1697,7 @@ components:
               latitude: 37.735851
               longitude: -127.10066
             radius: 100
-        status: "SUCCESSFUL"
+        assignmentStatus: "ASSIGNED"
         statusInfo: "DEVICE_DISCLOSURE_POLICY_APPLIED"
 
     RETRIEVE_BOOKINGS_INPUT:
@@ -1562,7 +1712,7 @@ components:
       description: Successfully retrieved assigned bookings for a given device. The device is part of only one booking.
       value:
         - bookingId: "8e2f6f30-0a1c-4c6b-92e1-1bd05aef1c58"
-          totalDevices: 15
+          bookingDeviceCount: 15
           remainingDevices: 13
           qosProfile: "QOS_MEDIA_BROADCAST"
           startTime: "2025-10-27T15:00:00.000Z"
