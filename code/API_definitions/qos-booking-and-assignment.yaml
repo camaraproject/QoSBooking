@@ -55,10 +55,10 @@ info:
       ┌─────────────┐
       │  SCHEDULED  │  Confirmed; QoS resources reserved for future start time.
       └──────┬──────┘
-             │  at start time → ACTIVE; booking-status-changed (TERMINATED if cancelled)
+             │  at start time → ACTIVATED; booking-status-changed (TERMINATED if cancelled)
              ▼
       ┌─────────────┐
-      │   ACTIVE    │  Booking window open; QoS resources live.
+      │   ACTIVATED │  Booking window open; QoS resources live.
       └──────┬──────┘
              │  booking-status-changed (TERMINATED)
              ▼
@@ -71,16 +71,16 @@ info:
     |---|---|---|
     | `REQUESTED` | Booking accepted and `bookingId` assigned; operator is validating network availability. `statusInfo: VALIDATION_PENDING`. | None — poll or await `booking-status-changed`. |
     | `SCHEDULED` | Confirmed; QoS resources reserved. Devices may be assigned now. `statusInfo: BOOKING_SCHEDULED`. | `booking-status-changed` (`bookingStatus: SCHEDULED`). |
-    | `ACTIVE` | Booking window open; QoS resources live. `statusInfo: BOOKING_ACTIVATED`. | `booking-status-changed` (`bookingStatus: ACTIVE`). |
+    | `ACTIVATED` | Booking window open; QoS resources live. `statusInfo: BOOKING_ACTIVATED`. | `booking-status-changed` (`bookingStatus: ACTIVATED`). |
     | `TERMINATED` | Terminal. `statusInfo` carries the reason: `BOOKING_CANCELLED`, `BOOKING_EXPIRED`, `DURATION_EXPIRED`, `SERVICE_NOT_AVAILABLE`, `QOS_PROFILE_NOT_SUPPORTED`, `NETWORK_TERMINATED`, or `BOOKING_UNKNOWN_ERROR`. | `booking-status-changed` (`bookingStatus: TERMINATED`). |
 
     A booking may transition from any non-terminal state directly to `TERMINATED`.
-    For synchronous operators, `SCHEDULED` or `ACTIVE` (when the start time is immediate) may be
+    For synchronous operators, `SCHEDULED` or `ACTIVATED` (when the start time is immediate) may be
     returned directly in the `createBooking` `201` response with no `REQUESTED` intermediate state.
 
     ## Device assignment lifecycle
 
-    A booking MUST be in `SCHEDULED` or `ACTIVE` state before devices can be assigned.
+    A booking MUST be in `SCHEDULED` or `ACTIVATED` state before devices can be assigned.
     Both `assignDevices` and `releaseDevices` share the same `AssignmentStatus` outcome model.
 
     Operators may resolve assignment and release synchronously (returning the final state in the
@@ -116,7 +116,7 @@ info:
 
     | CloudEvent type | Fired when | Schema |
     |---|---|---|
-    | `…v0.booking-status-changed` | Booking transitions to `SCHEDULED`, `ACTIVE`, or `TERMINATED` | `EventBookingStatusChanged` |
+    | `…v0.booking-status-changed` | Booking transitions to `SCHEDULED`, `ACTIVATED`, or `TERMINATED` | `EventBookingStatusChanged` |
     | `…v0.assignment-status-changed` | Assign or release resolves from `REQUESTED` to a final state | `EventAssignmentStatusChanged` |
 
     The `REQUESTED` intermediate state is not notified; it is observable only via polling
@@ -257,9 +257,9 @@ paths:
         - `Late-assigned devices:` Devices assigned after the schedule starts (but before it ends) will be provisioned and activated with the requested QoS profile immediately upon assignment.
         This operation will return with the following responses:
         - `HTTP 201 (bookingStatus: SCHEDULED):` The operator confirmed the booking; the start time is in the future.
-        - `HTTP 201 (bookingStatus: ACTIVE):` The operator confirmed the booking; the start time is now or in the past and the window is live.
+        - `HTTP 201 (bookingStatus: ACTIVATED):` The operator confirmed the booking; the start time is now or in the past and the window is live.
         - `HTTP 201 (bookingStatus: TERMINATED):` The operator determined synchronously that the booking cannot be fulfilled. `statusInfo` provides the reason.
-        - `HTTP 201 (bookingStatus: REQUESTED):` The booking resource is created and a `bookingId` is returned, but operator confirmation is still pending. A `booking-status-changed` notification will be sent to the registered `sink` with the final outcome (`SCHEDULED`, `ACTIVE`, or `TERMINATED`).
+        - `HTTP 201 (bookingStatus: REQUESTED):` The booking resource is created and a `bookingId` is returned, but operator confirmation is still pending. A `booking-status-changed` notification will be sent to the registered `sink` with the final outcome (`SCHEDULED`, `ACTIVATED`, or `TERMINATED`).
         - `HTTP 4xx (Failure Condition):` The request itself was invalid. The response will include specific error codes and descriptions.
         - `statusInfo` contains additional information under certain conditions.
       operationId: createBooking
@@ -321,7 +321,7 @@ paths:
             | `bookingStatus` | `bookingId` present | Meaning |
             |---|:---:|---|
             | `SCHEDULED` | Yes | Operator confirmed; start time is in the future. |
-            | `ACTIVE` | Yes | Operator confirmed; start time is now or in the past and the window is live. |
+            | `ACTIVATED` | Yes | Operator confirmed; start time is now or in the past and the window is live. |
             | `REQUESTED` | Yes | Resource created and `bookingId` assigned; operator confirmation is still in progress. A `booking-status-changed` notification delivers the final outcome. |
             | `TERMINATED` | No | Operator rejected the booking synchronously; no resource was created. `statusInfo` provides the reason (e.g. `SERVICE_NOT_AVAILABLE`). |
           headers:
@@ -363,7 +363,7 @@ paths:
         This operation is synchronous and retrieves the details of an existing Quality of Service (QoS) booking using its unique identifier (`bookingId`). This `bookingId` is the identifier returned by the initial booking operation upon successful creation.
 
         Response Scenarios:
-          - `HTTP 200:` The booking details are successfully retrieved and returned in the response body. The `bookingStatus` field reflects the current booking lifecycle state (`REQUESTED`, `SCHEDULED`, `ACTIVE`, or `TERMINATED`) and `remainingDevices` shows how many devices can still be assigned.
+          - `HTTP 200:` The booking details are successfully retrieved and returned in the response body. The `bookingStatus` field reflects the current booking lifecycle state (`REQUESTED`, `SCHEDULED`, `ACTIVATED`, or `TERMINATED`) and `remainingDevices` shows how many devices can still be assigned.
           - `HTTP 4xx:` The request failed. An appropriate HTTP 4xx error code is returned with a specific error code and description.
       operationId: getBookingById
       parameters:
@@ -859,7 +859,7 @@ components:
         `remainingDevices` >= 0 and <= `bookingDeviceCount`
         - Once a device is successfully assigned to the booking, `remainingDevices` will be reduced by 1, and once the device is released then it will be incremented by 1
         - Booking Information is also returned as part of the message body when the devices are successfully assigned to the booking.
-        - `bookingId` is present when `bookingStatus` is `REQUESTED`, `SCHEDULED`, or `ACTIVE` — the booking resource exists and is addressable. It is absent when `bookingStatus` is `TERMINATED` at creation time, meaning the operator rejected the booking synchronously and no resource was created.
+        - `bookingId` is present when `bookingStatus` is `REQUESTED`, `SCHEDULED`, or `ACTIVATED` — the booking resource exists and is addressable. It is absent when `bookingStatus` is `TERMINATED` at creation time, meaning the operator rejected the booking synchronously and no resource was created.
 
       allOf:
         - type: object
@@ -1069,13 +1069,13 @@ components:
         The lifecycle state of a QoS Booking. The booking status can be one of the following:
         * `REQUESTED` - The booking request has been accepted but the operator has not yet confirmed availability. A `booking-status-changed` notification will deliver the final state.
         * `SCHEDULED` - The booking has been confirmed and is reserved for a future start time. Devices may be assigned now.
-        * `ACTIVE` - The booking window is open and QoS resources are live. Assigned devices may use them subject to eligibility.
+        * `ACTIVATED` - The booking window is open and QoS resources are live. Assigned devices may use them subject to eligibility.
         * `TERMINATED` - The booking has reached a terminal state. The `bookingId` is no longer valid. `statusInfo` provides the reason (`BOOKING_CANCELLED`, `BOOKING_EXPIRED`, `SERVICE_NOT_AVAILABLE`, `QOS_PROFILE_NOT_SUPPORTED`, `NETWORK_TERMINATED`, `DURATION_EXPIRED`, or `BOOKING_UNKNOWN_ERROR`).
       type: string
       enum:
         - REQUESTED
         - SCHEDULED
-        - ACTIVE
+        - ACTIVATED
         - TERMINATED
 
     BookingStatusChanged:
@@ -1086,7 +1086,7 @@ components:
       type: string
       enum:
         - SCHEDULED
-        - ACTIVE
+        - ACTIVATED
         - TERMINATED
 
     BookingStatusInfo:
@@ -1097,7 +1097,7 @@ components:
         Transition reasons for `bookingStatus: REQUESTED`:
         * `VALIDATION_PENDING` - The booking is pending operator validation. A `booking-status-changed` notification will follow.
 
-        Transition reasons for `bookingStatus: SCHEDULED` or `ACTIVE`:
+        Transition reasons for `bookingStatus: SCHEDULED` or `ACTIVATED`:
         * `BOOKING_SCHEDULED` - The booking was confirmed and scheduled for a future start time.
         * `BOOKING_ACTIVATED` - Booking schedule started and the booking is activated.
         * `DELETE_REQUESTED` - User requested deletion; async processing is in progress (`bookingStatus` transitions to `TERMINATED` on completion).
@@ -1401,7 +1401,7 @@ components:
 
     BOOKING_PENDING:
       summary: Booking Requested (Pending Confirmation)
-      description: QoS Booking resource is created and a `bookingId` is returned, but operator confirmation is still in progress (`bookingStatus` = `REQUESTED`). A `booking-status-changed` notification will deliver the final outcome (`SCHEDULED`, `ACTIVE`, or `TERMINATED`).
+      description: QoS Booking resource is created and a `bookingId` is returned, but operator confirmation is still in progress (`bookingStatus` = `REQUESTED`). A `booking-status-changed` notification will deliver the final outcome (`SCHEDULED`, `ACTIVATED`, or `TERMINATED`).
       value:
         bookingId: "3fa85f64-5717-4562-b3fc-2c963f66afa6"
         bookingDeviceCount: 5
@@ -1434,7 +1434,7 @@ components:
             latitude: 37.735851
             longitude: -127.10066
           radius: 100
-        bookingStatus: "ACTIVE"
+        bookingStatus: "ACTIVATED"
         statusInfo: "BOOKING_ACTIVATED"
 
     BOOKING_CANCELLED:
