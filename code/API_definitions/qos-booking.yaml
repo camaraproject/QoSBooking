@@ -6,6 +6,8 @@ info:
 
     The API enables API consumers to book the assignment of a predefined QoS profile to a specific device, with some conditions such as the start time, duration and location.
 
+    The lifecycle of a booking is expressed by the `BookingStatus` value and typically follows this pattern: a booking is accepted as `REQUESTED`, then it may become `SCHEDULED` for a future start, then `ACTIVATED` once the start time comes, and it eventually becomes `TERMINATED` when the booking expires, is cancelled or is rejected.
+
 
     # Relevant terms and definitions
 
@@ -13,7 +15,7 @@ info:
     Latency, throughput or priority requirements of the application mapped to relevant QoS profile values. The set of QoS Profiles that a network operator is offering may be retrieved via the `qos-profiles` API (cf. https://github.com/camaraproject/QualityOnDemand/) or will be agreed during the onboarding with the API service provider.
 
     * **Identifier for the device**:
-    At least one identifier for the device (user equipment) out of four options: IPv4 address, IPv6 address, Phone number, or Network Access Identifier assigned by the network operator for the device, at the request time. After the booking request is accepted, the device may get different IP addresses, but the booking will still apply to the device that was identified during the request process. Note: Network Access Identifier is defined for future use and will not be supported with v0.1 of the API.
+    At least one identifier for the device (user equipment) out of four options: IPv4 address, IPv6 address, Phone number, or Network Access Identifier assigned by the network operator for the device, at the request time. After the booking request is accepted, the device may get different IP addresses, but the booking will still apply to the device that was identified during the request process. Note: Network Access Identifier is defined for future use and is not supported in this version of the API.
 
     * **Notification URL and token**:
     API consumers may provide a callback URL (`sink`) on which notifications about all status change events (e.g. duration expiration) can be received from the API provider. This is an optional parameter. The notification will be sent as a CloudEvent compliant message. If `sink` is included, it is RECOMMENDED for the client to provide as well the `sinkCredential` property to protect the notification endpoint. In the current version,`sinkCredential.credentialType` MUST be set to `ACCESSTOKEN` or `PRIVATE_KEY_JWT` if provided.
@@ -27,6 +29,7 @@ info:
     - An operation to terminate a QoS Booking, identified by its `BookingId`.
 
     <!-- CAMARA:MANDATORY:authorization-and-authentication:BEGIN -->
+
     # Authorization and authentication
 
     The "Camara Security and Interoperability Profile" provides details of how an API consumer requests an access token. Please refer to Identity and Consent Management (https://github.com/camaraproject/IdentityAndConsentManagement/) for the released version of the profile.
@@ -37,6 +40,7 @@ info:
     <!-- CAMARA:MANDATORY:authorization-and-authentication:END -->
 
     <!-- CAMARA:MANDATORY:identifying-device-from-access-token:BEGIN -->
+
     # Identifying the device from the access token
 
     This API requires the API consumer to identify a device as the subject of the API as follows:
@@ -66,6 +70,7 @@ info:
     <!-- CAMARA:MANDATORY:additional-error-responses:END -->
 
     <!-- CAMARA:MANDATORY:request-body-strictness:BEGIN -->
+
     # Request body strictness
 
     This API rejects requests with JSON request bodies that contain properties not declared in this specification, at any nesting level. Unknown properties result in a `400 INVALID_ARGUMENT` response.
@@ -136,6 +141,9 @@ paths:
           application/json:
             schema:
               $ref: "#/components/schemas/CreateBooking"
+            examples:
+              EXAMPLE_CREATION_BODY:
+                $ref: '#/components/examples/EXAMPLE_CREATION_BODY'
         required: true
       callbacks:
         notifications:
@@ -401,7 +409,7 @@ components:
           allOf:
             - $ref: "#/components/schemas/PortsSpec"
         applicationServerPorts:
-          description: A list of single ports or port ranges on the application server
+          description: A list of single ports or port ranges on the application server. If omitted, then all ports are considered to be included (as from 1 to 65536).
           allOf:
             - $ref: "#/components/schemas/PortsSpec"
         sink:
@@ -419,7 +427,7 @@ components:
     BookingInfo:
       description: |
         Booking related information returned in responses.
-        Optional device object only to be returned if provided in createBooking. If more than one type of device identifier was provided, only one identifier will be returned (at implementation choice and with the original value provided in createBooking).
+        Note that the device object is defined as optional and will only to be returned if provided in createBooking. If more than one type of device identifier was provided, only one identifier will be returned (at implementation choice and with the original value provided in createBooking).
         Please note that IP addresses of devices can change and get reused, so the original values may no longer identify the same device. They identified the device at the time of QoS Booking creation.
       allOf:
         - $ref: "#/components/schemas/BaseBookingInfo"
@@ -698,7 +706,7 @@ components:
 
     ApplicationServer:
       description: |
-        A server hosting backend applications to deliver some business logic to clients.
+        A server hosting backend applications to deliver some business logic to clients. If omitted, then all destinations from a specified device are assumed (as 0.0.0.0 or 0:0:0:0:0:0:0:0).
 
         The developer can choose to provide the below specified device identifiers:
 
@@ -971,6 +979,28 @@ components:
       $ref: '../common/CAMARA_common.yaml#/components/responses/Generic429'
 
   examples:
+    EXAMPLE_CREATION_BODY:
+      summary: Booking creation example
+      description: Example request using a 3-legged access token to identify the device and identifying the application server by IPv4 subnet
+      value:
+        applicationServer:
+          ipv4Address: 198.51.100.0/24
+        qosProfile: "QOS_L"
+        sink: "https://application-server.com/notifications"
+        sinkCredential:
+          credentialType: ACCESSTOKEN
+          accessToken: "eyJhbGciOiJIUzI1NiIsInR..."
+          accessTokenExpiresUtc: "2024-12-01T12:00:00Z"
+          accessTokenType: bearer
+        startTime: "2024-06-01T12:00:00Z"
+        duration: 3600
+        serviceArea:
+          areaType: "CIRCLE"
+          center:
+            latitude: 50.735851
+            longitude: 7.10066
+          radius: 100
+
     BOOKING_ACTIVATED_WITH_DEVICE_RESPONSE:
       summary: QoS booking status is activated, with device included in response
       description: QoS booking info when booking status is activated, and request used a 2-legged access token with multiple device identifiers, or possibly only a single device identifier
