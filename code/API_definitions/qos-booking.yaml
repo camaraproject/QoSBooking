@@ -128,7 +128,7 @@ paths:
 
       operationId: createBooking
       parameters:
-        - $ref: "#/components/parameters/x-correlator"
+        - $ref: "../common/CAMARA_common.yaml#/components/parameters/x-correlator"
       requestBody:
         description: Parameters to create a new booking
         content:
@@ -147,7 +147,7 @@ paths:
                 Currently only `BOOKING_STATUS_CHANGED` event is defined.
               operationId: postBookingNotification
               parameters:
-                - $ref: "#/components/parameters/x-correlator"
+                - $ref: "../common/CAMARA_common.yaml#/components/parameters/x-correlator"
               requestBody:
                 required: true
                 content:
@@ -162,7 +162,7 @@ paths:
                   description: Successful notification
                   headers:
                     x-correlator:
-                      $ref: "#/components/headers/x-correlator"
+                      $ref: "../common/CAMARA_common.yaml#/components/headers/x-correlator"
                 "400":
                   $ref: "#/components/responses/Generic400"
                 "401":
@@ -179,7 +179,7 @@ paths:
           description: Booking created
           headers:
             x-correlator:
-              $ref: "#/components/headers/x-correlator"
+              $ref: "../common/CAMARA_common.yaml#/components/headers/x-correlator"
           content:
             application/json:
               schema:
@@ -221,13 +221,13 @@ paths:
       operationId: getBookingById
       parameters:
         - $ref: "#/components/parameters/BookingId"
-        - $ref: "#/components/parameters/x-correlator"
+        - $ref: "../common/CAMARA_common.yaml#/components/parameters/x-correlator"
       responses:
         "200":
           description: Returns information about certain booking
           headers:
             x-correlator:
-              $ref: "#/components/headers/x-correlator"
+              $ref: "../common/CAMARA_common.yaml#/components/headers/x-correlator"
           content:
             application/json:
               schema:
@@ -270,18 +270,18 @@ paths:
       operationId: deleteBooking
       parameters:
         - $ref: "#/components/parameters/BookingId"
-        - $ref: "#/components/parameters/x-correlator"
+        - $ref: "../common/CAMARA_common.yaml#/components/parameters/x-correlator"
       responses:
         "204":
           description: Booking deleted
           headers:
             x-correlator:
-              $ref: "#/components/headers/x-correlator"
+              $ref: "../common/CAMARA_common.yaml#/components/headers/x-correlator"
         "202":
           description: Deletion request accepted to be processed. It applies for an asynchronous deletion process. Due to asynchronous nature, `bookingStatus` in the response will be `REQUESTED' , `SCHEDULED` or `ACTIVATED` with `statusInfo` set to `DELETE_REQUESTED`.
           headers:
             x-correlator:
-              $ref: "#/components/headers/x-correlator"
+              $ref: "../common/CAMARA_common.yaml#/components/headers/x-correlator"
           content:
             application/json:
               schema:
@@ -318,7 +318,7 @@ paths:
 
       operationId: retrieveBookingByDevice
       parameters:
-        - $ref: "#/components/parameters/x-correlator"
+        - $ref: "../common/CAMARA_common.yaml#/components/parameters/x-correlator"
       requestBody:
         description: Parameters to retrieve a booking by device
         content:
@@ -331,7 +331,7 @@ paths:
           description: Returns the QoS booking information for a given device. A device may have multiple bookings (for several times and locations), thus the response is an array. An empty array is returned if no sessions are found.
           headers:
             x-correlator:
-              $ref: "#/components/headers/x-correlator"
+              $ref: "../common/CAMARA_common.yaml#/components/headers/x-correlator"
           content:
             application/json:
               schema:
@@ -373,13 +373,6 @@ components:
       schema:
         $ref: "#/components/schemas/BookingId"
 
-    x-correlator:
-      $ref: '../common/CAMARA_common.yaml#/components/parameters/x-correlator'
-
-  headers:
-    x-correlator:
-      $ref: '../common/CAMARA_common.yaml#/components/headers/x-correlator'
-
   schemas:
     BookingId:
       description: Booking Identifier in UUID format
@@ -411,7 +404,7 @@ components:
           description: The address to which events shall be delivered, using the HTTP protocol.
           example: "https://endpoint.example.com/sink"
         sinkCredential:
-          $ref: "#/components/schemas/SinkCredential"
+          $ref: "../common/CAMARA_event_common.yaml#/components/schemas/SinkCredential"
       required:
         - qosProfile
 
@@ -425,7 +418,7 @@ components:
         - type: object
           properties:
             device:
-              $ref: "#/components/schemas/DeviceResponse"
+              $ref: "../common/CAMARA_common.yaml#/components/schemas/DeviceResponse"
             startTime:
               description: Date and time when QoS profile is scheduled to become available. It must follow [RFC 3339](https://datatracker.ietf.org/doc/html/rfc3339#section-5.6) and must have time zone.
               type: string
@@ -469,7 +462,7 @@ components:
         - type: object
           properties:
             device:
-              $ref: "#/components/schemas/Device"
+              $ref: "../common/CAMARA_common.yaml#/components/schemas/Device"
             startTime:
               description: Date and time when the API consumer requests the QoS profile to become available. It must follow [RFC 3339](https://datatracker.ietf.org/doc/html/rfc3339#section-5.6) and must have time zone.
               type: string
@@ -494,7 +487,7 @@ components:
       type: object
       properties:
         device:
-          $ref: "#/components/schemas/Device"
+          $ref: "../common/CAMARA_common.yaml#/components/schemas/Device"
 
     RetrieveBookingsOutput:
       description: QoS bookings for a given device
@@ -503,12 +496,6 @@ components:
         $ref: "#/components/schemas/BookingInfo"
       minItems: 0
       maxItems: 100
-
-    SinkCredential:
-      $ref: '../common/CAMARA_event_common.yaml#/components/schemas/SinkCredential'
-
-    Port:
-      $ref: '../common/CAMARA_common.yaml#/components/schemas/Port'
 
     PortsSpec:
       description: Specification of several TCP or UDP ports
@@ -528,16 +515,16 @@ components:
               - to
             properties:
               from:
-                $ref: "#/components/schemas/Port"
+                $ref: "../common/CAMARA_common.yaml#/components/schemas/Port"
               to:
-                $ref: "#/components/schemas/Port"
+                $ref: "../common/CAMARA_common.yaml#/components/schemas/Port"
         ports:
           description: Array of TCP or UDP ports
           type: array
           minItems: 1
           maxItems: 65536
           items:
-            $ref: "#/components/schemas/Port"
+            $ref: "../common/CAMARA_common.yaml#/components/schemas/Port"
       example:
         ranges:
           - from: 5010
@@ -657,7 +644,7 @@ components:
             - radius
           properties:
             center:
-              $ref: "#/components/schemas/Point"
+              $ref: "../common/CAMARA_common.yaml#/components/schemas/Point"
             radius:
               type: number
               description: Distance from the center in meters
@@ -672,7 +659,7 @@ components:
             - boundary
           properties:
             boundary:
-              $ref: "#/components/schemas/PointList"
+              $ref: "../common/CAMARA_common.yaml#/components/schemas/PointList"
 
     AreaName:
       description: The value of "AreaName" might be predefined and only regional or even an operator-specific in this API version. As a prerequisite, the API Provider may offer API Consumer the "AreaName" values, which API consumer can request, in a preparation phase. And then API Consumers can select from the "AreaNames" as Service Areas.
@@ -685,21 +672,6 @@ components:
             areaName:
               type: string
               maxLength: 256
-
-    PointList:
-      $ref: '../common/CAMARA_common.yaml#/components/schemas/PointList'
-
-    Point:
-      $ref: '../common/CAMARA_common.yaml#/components/schemas/Point'
-
-    Latitude:
-      $ref: '../common/CAMARA_common.yaml#/components/schemas/Latitude'
-
-    Longitude:
-      $ref: '../common/CAMARA_common.yaml#/components/schemas/Longitude'
-
-    Device:
-      $ref: '../common/CAMARA_common.yaml#/components/schemas/Device'
 
     ApplicationServer:
       description: |
@@ -742,9 +714,6 @@ components:
             - 2001:db8:85a3:8d3::0/64
             - 2001:db8:85a3:8d3::/64
 
-    DeviceResponse:
-      $ref: '../common/CAMARA_common.yaml#/components/schemas/DeviceResponse'
-
     BookingStatus:
       description: |
         The current lifecycle status of the requested QoS Booking. The status can be one of the following:
@@ -769,9 +738,6 @@ components:
         - ACTIVATED
         - TERMINATED
 
-    ErrorInfo:
-      $ref: '../common/CAMARA_common.yaml#/components/schemas/ErrorInfo'
-
   responses:
     Generic400:
       $ref: '../common/CAMARA_common.yaml#/components/responses/Generic400'
@@ -780,12 +746,12 @@ components:
       description: Bad Request when creating a QoS booking.
       headers:
         x-correlator:
-          $ref: "#/components/headers/x-correlator"
+          $ref: "../common/CAMARA_common.yaml#/components/headers/x-correlator"
       content:
         application/json:
           schema:
             allOf:
-              - $ref: "#/components/schemas/ErrorInfo"
+              - $ref: "../common/CAMARA_common.yaml#/components/schemas/ErrorInfo"
               - type: object
                 properties:
                   status:
@@ -843,12 +809,12 @@ components:
       description: Not found
       headers:
         x-correlator:
-          $ref: "#/components/headers/x-correlator"
+          $ref: "../common/CAMARA_common.yaml#/components/headers/x-correlator"
       content:
         application/json:
           schema:
             allOf:
-              - $ref: "#/components/schemas/ErrorInfo"
+              - $ref: "../common/CAMARA_common.yaml#/components/schemas/ErrorInfo"
               - type: object
                 properties:
                   status:
@@ -869,12 +835,12 @@ components:
       description: Trying to create a booking which already exists for this device
       headers:
         x-correlator:
-          $ref: '#/components/headers/x-correlator'
+          $ref: "../common/CAMARA_common.yaml#/components/headers/x-correlator"
       content:
         application/json:
           schema:
             allOf:
-              - $ref: "#/components/schemas/ErrorInfo"
+              - $ref: "../common/CAMARA_common.yaml#/components/schemas/ErrorInfo"
               - type: object
                 properties:
                   status:
@@ -898,12 +864,12 @@ components:
       description: Unprocessable Content
       headers:
         x-correlator:
-          $ref: "#/components/headers/x-correlator"
+          $ref: "../common/CAMARA_common.yaml#/components/headers/x-correlator"
       content:
         application/json:
           schema:
             allOf:
-              - $ref: "#/components/schemas/ErrorInfo"
+              - $ref: "../common/CAMARA_common.yaml#/components/schemas/ErrorInfo"
               - type: object
                 properties:
                   status:
