@@ -6,11 +6,13 @@ info:
 
     The API enables API consumers to book the assignment of a predefined QoS profile to a specific device, with some conditions such as the start time, duration and location.
 
-
     # Relevant terms and definitions
 
     * **QoS profiles**:
     Latency, throughput or priority requirements of the application mapped to relevant QoS profile values. The set of QoS Profiles that a network operator is offering may be retrieved via the `qos-profiles` API (cf. https://github.com/camaraproject/QualityOnDemand/) or will be agreed during the onboarding with the API service provider.
+
+    * **Duration**:
+    Duration (in seconds) for which the QoS session (between application client and application server) should be booked. Limits for booked QoS session duration can be set by the implementation for the QoS profile. The user may request a termination before its expiration.
 
     * **Identifier for the device**:
     At least one identifier for the device (user equipment) out of four options: IPv4 address, IPv6 address, Phone number, or Network Access Identifier assigned by the network operator for the device, at the request time. After the booking request is accepted, the device may get different IP addresses, but the booking will still apply to the device that was identified during the request process. Note: Network Access Identifier is defined for future use and will not be supported with v0.1 of the API.
@@ -50,6 +52,16 @@ info:
     - If the subject cannot be identified from the access token and the optional `device` object is not included in the request, then the server will return an error with the `422 MISSING_IDENTIFIER` error code.
 
     - If the subject can be identified from the access token and the optional `device` object is also included in the request, then the server will return an error with the `422 UNNECESSARY_IDENTIFIER` error code. This will be the case even if the same device is identified by these two methods, as the server is unable to make this comparison.
+
+    - If a request value is outside the valid range supported by the operator, typical examples include a start time or ports, then the server will return an error with the `400 OUT_OF_RANGE` error code.
+
+    - If the requested booking duration is shorter than the minimum or longer than the maximum duration allowed for the selected `qosProfile`, then the server will return an error with the `400 QOS_BOOKING.DURATION_OUT_OF_RANGE` error code.
+
+    - If the request bookingId in getBookingById and deleteBooking operations does not exist in the current operator-managed resource, then the server will return an error with the `404 NOT_FOUND` error code.
+
+    - A QoS booking is a reservation for an App-flow between a specific device and a specific application server, a specific time window and, where relevant, a specific service area. An App-flow is expected to have at most one active booking at a time. If the client attempts to create a duplicate or overlapping booking for the same flow, then the server will return a `409 ALREADY_EXISTS` error code.
+
+    - If the requested area is syntactically valid but cannot be accepted for QoS booking by the operator, for example because it is outside the supported coverage, then the server will return an error with `422 QOS_BOOKING.INVALID_AREA` error code.
     <!-- CAMARA:MANDATORY:identifying-device-from-access-token:END -->
 
     - If the requested `qosProfile` exists but is currently not available for creating a booking, then the server will return an error with the `422 QOS_BOOKING.QOS_PROFILE_NOT_APPLICABLE` error code.
