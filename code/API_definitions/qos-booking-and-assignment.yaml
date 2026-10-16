@@ -138,9 +138,8 @@ info:
     # Identifying the device from the access token
 
     This API requires the API consumer to identify a device as the subject of the API as follows:
-    - When the API is invoked using a two-legged access token, the subject will be identified from the optional `device` or `devices` object, which therefore MUST be provided.
-
-    - When a three-legged access token is used however, this optional identifier MUST NOT be provided, as the subject will be uniquely identified from the access token. In this case, only one device can be provided at a time.
+    - When the API is invoked using a two-legged access token, the subject will be identified from the optional `device` object, which therefore MUST be provided.
+    - When a three-legged access token is used however, this optional identifier MUST NOT be provided, as the subject will be uniquely identified from the access token.
 
     This approach simplifies API usage for API consumers using a three-legged access token to invoke the API by relying on the information that is associated with the access token and was identified during the authentication process.
 
@@ -1116,6 +1115,7 @@ components:
         * `BOOKING_UNKNOWN_ERROR` - An unknown error occurred.
         * `BOOKING_ACCEPTED` - Deprecated. Use `BOOKING_SCHEDULED` instead.
       type: string
+      pattern: ^[A-Z][A-Z0-9_]*$
       maxLength: 256
       example: "BOOKING_SCHEDULED"
 
@@ -1137,6 +1137,7 @@ components:
         * `BOOKING_EXPIRED` - The booking referenced has expired and is no longer active.
         * `BOOKING_TERMINATED` - The booking was terminated by the operator.
       type: string
+      pattern: ^[A-Z][A-Z0-9_]*$
       maxLength: 256
       example: "ASSIGNMENT_COMPLETED"
 
@@ -1577,25 +1578,6 @@ components:
           radius: 100
         bookingStatus: "ACTIVATED"
         statusInfo: "BOOKING_ACTIVATED"
-
-    BOOKING_CANCELLED:
-      summary: Booking Cancelled (notification payload)
-      description: Example `booking-status-changed` CloudEvent payload when a booking is successfully cancelled.
-      value:
-        bookingId: "8e2f6f30-0a1c-4c6b-92e1-1bd05aef1c58"
-        bookingDeviceCount: 15
-        remainingDevices: 15
-        qosProfile: "QOS_MEDIA_BROADCAST"
-        startTime: "2025-10-27T15:00:00.000Z"
-        duration: 3600
-        serviceArea:
-          areaType: "CIRCLE"
-          center:
-            latitude: 37.735851
-            longitude: -127.10066
-          radius: 100
-        bookingStatus: "TERMINATED"
-        statusInfo: "BOOKING_CANCELLED"
 
     CANCELLATION_PENDING:
       summary: Cancellation is Requested

@@ -63,14 +63,13 @@ Feature: CAMARA QoS Booking and Assignment API, vwip - Operation assignDevices
     And the response property "$.devices" may not contain the assigned device information
 
   @qos_booking_and_assignment_assignDevices_03_assigned_devices_listed
-  Scenario: Assigned devices are returned by getDevicesByBookingId
+    Scenario: Assigned devices are returned by getDevicesByBookingId
     Given the header "Authorization" is set to a valid 2-legged access token
-    And the request body property "$.devices" is set to a valid array of device identifiers compliant with the schema at "#/components/schemas/Devices"
-    When the request "assignDevices" is sent
-    Then the response status code is 201
-    When the request "getDevicesByBookingId" is sent with the same path parameter "bookingId"
+    And devices have been assigned to the QoS booking with operation "assignDevices" using a valid array of device identifiers compliant with the schema at "#/components/schemas/Devices"
+    And the path parameter "bookingId" is set to the identifier of that QoS booking
+    When the request "getDevicesByBookingId" is sent
     Then the response status code is 200
-    And the response property "$.devices" contains the device identifiers returned by the assignment response
+    And the response property "$.devices" contains the device identifiers returned by the assignDevices response
 
   # CONDITIONAL: only applicable if the API provider supports partial assignment
   @qos_booking_and_assignment_assignDevices_04_partial_success

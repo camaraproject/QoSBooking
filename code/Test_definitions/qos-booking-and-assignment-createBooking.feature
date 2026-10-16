@@ -119,17 +119,15 @@ Feature: CAMARA QoS Booking and Assignment API, vwip - Operation createBooking
 
   @qos_booking_and_assignment_createBooking_08_booking_readable_after_creation
   Scenario: The created booking can be read with getBookingById
-    Given the request body is compliant with the schema at "#/components/schemas/BookingInput"
-    When the request "createBooking" is sent
-    Then the response status code is 201
-    And the response property "$.bookingId" exists and is a valid UUID
-    When the request "getBookingById" is sent with the path parameter "bookingId" set to the value of "$.bookingId" of the creation response
+    Given a QoS booking has been created successfully with operation "createBooking"
+    And the path parameter "bookingId" is set to the value of "$.bookingId" of the createBooking response
+    When the request "getBookingById" is sent
     Then the response status code is 200
-    And the response property "$.bookingId" has the same value as in the creation response
-    And the response property "$.qosProfile" has the same value as in the creation request body
-    And the response property "$.startTime" has the same value as in the creation request body
-    And the response property "$.duration" has the same value as in the creation request body
-    And the response property "$.serviceArea" has the same value as in the creation request body
+    And the response property "$.bookingId" has the same value as in the createBooking response
+    And the response property "$.qosProfile" has the same value as in the createBooking request body
+    And the response property "$.startTime" has the same value as in the createBooking request body
+    And the response property "$.duration" has the same value as in the createBooking request body
+    And the response property "$.serviceArea" has the same value as in the createBooking request body
 
   @qos_booking_and_assignment_createBooking_09_event_notification
   Scenario: Event is received when a booking status changes after using sink

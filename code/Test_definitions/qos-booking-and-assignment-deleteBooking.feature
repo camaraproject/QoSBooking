@@ -55,10 +55,9 @@ Feature: CAMARA QoS Booking and Assignment API, vwip - Operation deleteBooking
   @qos_booking_and_assignment_deleteBooking_03_booking_not_readable_after_deletion
   Scenario: A deleted QoS booking can no longer be read
     Given an existing QoS booking created by operation "createBooking" with no devices assigned
+    And the QoS booking has been deleted with operation "deleteBooking" and the deletion has completed
     And the path parameter "bookingId" is set to the value of the identifier for that QoS booking
-    When the request "deleteBooking" is sent
-    Then the response status code is 204
-    When the request "getBookingById" is sent with the same path parameter "bookingId"
+    When the request "getBookingById" is sent
     Then the response status code is 404
     And the response property "$.status" is 404
     And the response property "$.code" is "NOT_FOUND"

@@ -64,10 +64,9 @@ Feature: CAMARA QoS Booking and Assignment API, vwip - Operation releaseDevices
   @qos_booking_and_assignment_releaseDevices_03_released_devices_not_listed
   Scenario: Released devices are no longer returned by getDevicesByBookingId
     Given the header "Authorization" is set to a valid 2-legged access token
-    And the request body property "$.devices" is set to a valid array of device identifiers that are assigned to the QoS booking
-    When the request "releaseDevices" is sent
-    Then the response status code is 200
-    When the request "getDevicesByBookingId" is sent with the same path parameter "bookingId"
+    And devices assigned to the QoS booking have been released with operation "releaseDevices"
+    And the path parameter "bookingId" is set to the identifier of that QoS booking
+    When the request "getDevicesByBookingId" is sent
     Then the response status code is 200
     And the response property "$.devices" does not contain any of the released device identifiers
 
