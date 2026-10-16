@@ -1,4 +1,4 @@
-Feature: CAMARA QoS Booking and Assignment API, vwip - Operation getDevicesByBookingId
+Feature: CAMARA QoS Booking and Assignment API, v0.2.0-rc.2 - Operation getDevicesByBookingId
   # CAMARA Commonalities: 0.9.0
   #
   # Input to be provided by the implementation to the tester
@@ -19,7 +19,7 @@ Feature: CAMARA QoS Booking and Assignment API, vwip - Operation getDevicesByBoo
 
   Background: Common "getDevicesByBookingId" setup
     Given an environment at "apiRoot"
-    And the resource "/qos-booking-and-assignment/vwip/qos-bookings/{bookingId}/devices"
+    And the resource "/qos-booking-and-assignment/v0.2rc2/qos-bookings/{bookingId}/devices"
     And the header "Authorization" is set to a valid access token
     And the header "x-correlator" complies with the schema at "#/components/schemas/XCorrelator"
     And the path parameter "bookingId" is set by default to the identifier of an existing QoS booking created by operation "createBooking" with devices assigned by operation "assignDevices"
