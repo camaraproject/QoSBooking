@@ -109,11 +109,12 @@ Changes documented below are compared to version 0.2.0-rc.1.
 
 ### Changed
 
-* N/A
+* QoS B: Add default assumption for ApplicationServer and its Port by @Masa8106 in https://github.com/camaraproject/QoSBooking/pull/146
 
 ### Fixed
 
-* N/A
+* QoS B: Update ApplicationServerIpAddress pattern by @Masa8106 in https://github.com/camaraproject/QoSBooking/pull/143
+* QoS B: Endpoints that do not accept explicit device identifier include it as an optional response parameter by @Masa8106 in https://github.com/camaraproject/QoSBooking/pull/144
 
 ### Removed
 
