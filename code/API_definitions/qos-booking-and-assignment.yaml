@@ -10,7 +10,7 @@ info:
     # Relevant terms and definitions
 
     * **QoS profiles**:
-    Latency, throughput or priority requirements of the application mapped to relevant QoS profile values. The set of QoS Profiles that a network operator is offering may be retrieved via the `qos-profiles` API (cf. https://github.com/camaraproject/QualityOnDemand/) or will be agreed during the onboarding with the API service provider.
+    Latency, throughput or priority requirements of the application mapped to relevant QoS profile values. The set of QoS Profiles that a network operator is offering may be retrieved via the `qos-profiles` API (cf. https://github.com/camaraproject/QoSProfiles) or will be agreed during the onboarding with the API service provider.
 
     * **Identifier for the device**:
     At least one identifier for the device (user equipment) out of four options: IPv4 address, IPv6 address, Phone number, or Network Access Identifier assigned by the network operator for the device, at the request time. After the booking request is accepted, the device may get different IP addresses, but the booking will still apply to the device that was identified during the request process. Note: Network Access Identifier is defined for future use and is not currently supported.
@@ -474,11 +474,11 @@ paths:
       description: |
         This endpoint allows the end user to assign one or more devices to the existing QoS Booking.
         - If the assignment is successful for all the devices, the call will return 201 success code with assignmentStatus `ASSIGNED` and the network is available for the said devices to connect and use them at the requested time
-        - If the assignment request failed for some reason, this call we be retured with 4xx error code with appropirate status codes
+        - If the assignment request failed for some reason, this call will be returned with 4xx error code with appropriate status codes
         - If the number of devices in the request exceeds the remaining capacity of the booking (`remainingDevices`), the request is rejected with `422 QOS_BOOKING_AND_ASSIGNMENT.DEVICE_QUOTA_EXCEEDED`. The `statusInfo` value `QUOTA_EXCEEDED` is used only when the shortage is detected during asynchronous processing.
         - This is an asynchronous call, and assignmentStatus = `REQUESTED` if the network is still processing your request. An `assignment-status-changed` notification to the `sink` registered at booking creation will deliver the final assignmentStatus.
         - If the network could not assign all the requested devices, then assignmentStatus = `PARTIAL_SUCCESS` and the `statusInfo` will have additional information.
-        - If a 2-legged access token is used, then the device details SHOULD BE provided as part of the input, and the output will return the array of actually assigned devices.
+        - If a 2-legged access token is used, then the device details MUST be provided as part of the input, and the output will return the array of actually assigned devices.
         - If a 3-legged access token is used, then the device information are identified from the access token, so only one device is implicitly assigned, and the return value may not contain the assigned device information
       operationId: assignDevices
       parameters:
@@ -519,7 +519,7 @@ paths:
         "202":
           description: |
             Assignment request is accepted but pending decision.
-            Once the decision is made a notification will be sent to the `sink` registered at booking creation with appropirate success or failure Confirmation
+            Once the decision is made a notification will be sent to the `sink` registered at booking creation with appropriate success or failure Confirmation
           headers:
             x-correlator:
               $ref: "#/components/headers/x-correlator"
@@ -710,7 +710,7 @@ paths:
         required: true
       responses:
         "200":
-          description: Returns the QoS booking information for a given device. A device may have multiple bookings (for several times and locations), thus the response is an array. An empty array is returned if no sessions are found.
+          description: Returns the QoS booking information for a given device. A device may have multiple bookings (for several times and locations), thus the response is an array. An empty array is returned if no bookings are found.
           headers:
             x-correlator:
               $ref: "#/components/headers/x-correlator"
@@ -872,7 +872,7 @@ components:
         - The size of the array should be less than or equal to the devices that are remaining in the original booking.
         - At least one device identifier is required when a 2-legged access token is used.
         - In a 3-legged situation, only one device can be assigned at a time, and the device details are automatically generated from the access token
-        - In such a situation, `Devices` array SHOULD NOT be provided.
+        - In such a situation, `Devices` array MUST NOT be provided.
       type: object
       additionalProperties: false
       properties:
@@ -927,7 +927,7 @@ components:
           - A UUID style string
           - Support for predefined profiles QOS_S, QOS_M, QOS_L, and QOS_E
           - A searchable descriptive name
-        The set of QoS Profiles that an operator is offering can be retrieved by means of the [QoS Profile API](link TBC).
+        The set of QoS Profiles that an operator is offering can be retrieved by means of the [QoS Profiles API](https://github.com/camaraproject/QoSProfiles).
       type: string
       example: QCI_1_voice
       minLength: 3
@@ -1487,12 +1487,11 @@ components:
         statusInfo: "DELETE_REQUESTED"
 
     ASSIGNMENT_INPUT_1:
-      summary: Assignment Input - All Identifiers
-      description: Assignment Input example. To demonstrate, four devices are used, each with a different type of device identifiers.
+      summary: Assignment Input - All Supported Identifiers
+      description: Assignment Input example. To demonstrate, three devices are used, each with a different type of device identifiers.
       value:
         devices:
           - phoneNumber: "+14145550101"
-          - networkAccessIdentifier: "+123456789@domain.com"
           - ipv4Address:
               publicAddress: "203.0.113.0"
               publicPort: 59765
@@ -1513,7 +1512,7 @@ components:
         bookingDetails:
           bookingId: "8e2f6f30-0a1c-4c6b-92e1-1bd05aef1c58"
           bookingDeviceCount: 15
-          remainingDevices: 11
+          remainingDevices: 12
           qosProfile: "QOS_MEDIA_BROADCAST"
           startTime: "2025-10-27T15:00:00.000Z"
           duration: 3600
@@ -1525,7 +1524,6 @@ components:
             radius: 100
         devices:
           - phoneNumber: "+14145550101"
-          - networkAccessIdentifier: "+123456789@domain.com"
           - ipv4Address:
               publicAddress: "203.0.113.0"
               publicPort: 59765
