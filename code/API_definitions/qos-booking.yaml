@@ -170,7 +170,7 @@ paths:
               description: |
                 Important: this endpoint is to be implemented by the API consumer.
                 The API provider will call this endpoint whenever any QoS Booking change related event occurs.
-                Currently only `BOOKING_STATUS_CHANGED` event is defined.
+                Currently only `org.camaraproject.qos-booking.v0.status-changed` event is defined.
               operationId: postBookingNotification
               parameters:
                 - $ref: "../common/CAMARA_common.yaml#/components/parameters/x-correlator"
@@ -197,6 +197,8 @@ paths:
                   $ref: "../common/CAMARA_common.yaml#/components/responses/PermissionDenied403"
                 "410":
                   $ref: "../common/CAMARA_event_common.yaml#/components/responses/SinkGone410"
+                "429":
+                  $ref: "../common/CAMARA_common.yaml#/components/responses/TooManyRequests429"
               security:
                 - {}
                 - notificationsBearerAuth: []
