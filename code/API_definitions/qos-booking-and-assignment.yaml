@@ -205,6 +205,7 @@ info:
     | Code | When raised | Operations |
     |---|---|---|
     | `EVENT_NOTIFICATIONS_NOT_SUPPORTED` | A `sink` is provided but the API provider does not support event notification delivery. The request is rejected and no booking is created; retry without `sink`. | `createBooking` only |
+    | `PRIVATE_KEY_JWT_NOT_CONFIGURED` | `sinkCredential.credentialType` is `PRIVATE_KEY_JWT` but no JWK Set was pre-configured for the API consumer. | `createBooking` only |
     | `QOS_BOOKING_AND_ASSIGNMENT.DEVICE_QUOTA_EXCEEDED` | The number of devices in the request exceeds the remaining device capacity of the booking (`remainingDevices`). | `assignDevices` only |
 
     The device identification codes (`MISSING_IDENTIFIER`, `UNNECESSARY_IDENTIFIER`, `UNSUPPORTED_IDENTIFIER`, `SERVICE_NOT_APPLICABLE`) apply to `assignDevices`, `releaseDevices` and `retrieveBookingByDevice`, as described in the section "Identifying the device from the access token".
@@ -270,6 +271,7 @@ paths:
         - `HTTP 201 (bookingStatus: REQUESTED):` The booking resource is created and a `bookingId` is returned, but operator confirmation is still pending. A `booking-status-changed` notification will be sent to the registered `sink` with the final outcome (`SCHEDULED`, `ACTIVATED`, or `TERMINATED`).
         - `HTTP 4xx (Failure Condition):` The request itself was invalid. The response will include specific error codes and descriptions.
         - `HTTP 422 (EVENT_NOTIFICATIONS_NOT_SUPPORTED):` A `sink` was provided but the API provider does not support event notification delivery. No booking is created; the API consumer can retry without `sink` and poll `getBookingById` instead.
+        - `HTTP 422 (PRIVATE_KEY_JWT_NOT_CONFIGURED):` `sinkCredential.credentialType` is `PRIVATE_KEY_JWT` but no JWK Set was pre-configured for the API consumer. No booking is created.
         - `statusInfo` contains additional information under certain conditions.
         - When a `sink` is provided and event delivery is accepted, `sink` is echoed in the response.
       operationId: createBooking
@@ -1299,9 +1301,12 @@ components:
                   code:
                     enum:
                       - EVENT_NOTIFICATIONS_NOT_SUPPORTED
+                      - PRIVATE_KEY_JWT_NOT_CONFIGURED
           examples:
             GENERIC_422_EVENT_NOTIFICATIONS_NOT_SUPPORTED:
               $ref: "../common/CAMARA_event_common.yaml#/components/examples/GENERIC_422_EVENT_NOTIFICATIONS_NOT_SUPPORTED"
+            GENERIC_422_PRIVATE_KEY_JWT_NOT_CONFIGURED:
+              $ref: "../common/CAMARA_event_common.yaml#/components/examples/GENERIC_422_PRIVATE_KEY_JWT_NOT_CONFIGURED"
 
     AssignDevices422:
       description: Unprocessable Content when assigning devices to a QoS booking.
