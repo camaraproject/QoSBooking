@@ -77,7 +77,10 @@ info:
     A booking may transition from any non-terminal state directly to `TERMINATED`.
     A `TERMINATED` booking is not immediately released: unless it was deleted with `deleteBooking`,
     it is deleted automatically, at earliest 360 seconds after reaching `TERMINATED`, so that API
-    consumers polling `getBookingById` can read the final status.
+    consumers polling `getBookingById` can read the final status. While a `TERMINATED` booking
+    can still be read, operations not valid in that state (e.g. `assignDevices`, `releaseDevices`)
+    return `409 INCOMPATIBLE_STATE`; once it is deleted, requests using its `bookingId` return
+    `404 NOT_FOUND`.
     For synchronous operators, `SCHEDULED` or `ACTIVATED` (when the start time is immediate) may be
     returned directly in the `createBooking` `201` response with no `REQUESTED` intermediate state.
 
@@ -197,7 +200,7 @@ info:
     | Code | When raised | Operations |
     |---|---|---|
     | `ALREADY_EXISTS` | A booking with identical parameters already exists for this consumer. | `createBooking` only |
-    | `INCOMPATIBLE_STATE` | The operation is not valid for the booking's current `bookingStatus`. Examples: assigning devices to a `TERMINATED` booking; `deleteBooking` when devices remain assigned (provider-dependent — see `deleteBooking` description). | `deleteBooking`, `assignDevices`, `releaseDevices` |
+    | `INCOMPATIBLE_STATE` | The operation is not valid for the booking's current `bookingStatus`. Examples: assigning devices to a `TERMINATED` booking that has not yet been deleted; `deleteBooking` when devices remain assigned (provider-dependent — see `deleteBooking` description). | `deleteBooking`, `assignDevices`, `releaseDevices` |
     | `ABORTED` | A concurrent operation of the same type is already in progress for the same booking. Retry after the in-progress operation resolves. | `assignDevices`, `releaseDevices` |
 
     ## API-specific 422 codes
