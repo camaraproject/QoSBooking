@@ -54,7 +54,6 @@ Feature: CAMARA QoS Booking API, vwip - Operation createBooking
       | $.applicationServerPorts | exists only if provided in the request body and with the same value                                       |
       | $.sink                   | exists only if provided in the request body and with the same value                                       |
       | $.sinkCredential         | does not exist in the response                                                                            |
-    # Note: serviceArea equality agreed in CQM meeting 2026-02-06; a corresponding API spec update is pending
 
   @qos_booking_createBooking_02_no_device_in_response
   Scenario: Device is not returned if not included in the creation
