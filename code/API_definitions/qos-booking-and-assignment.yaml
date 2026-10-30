@@ -1251,8 +1251,10 @@ components:
                     enum:
                       - INCOMPATIBLE_STATE
           examples:
-            GENERIC_409_INCOMPATIBLE_STATE:
-              $ref: "../common/CAMARA_common.yaml#/components/examples/GENERIC_409_INCOMPATIBLE_STATE"
+            # Local example until Commonalities#734 is resolved and adopted; then revert to
+            # "../common/CAMARA_common.yaml#/components/examples/GENERIC_409_INCOMPATIBLE_STATE"
+            BookingIncompatibleState:
+              $ref: "#/components/examples/BookingIncompatibleState"
 
     DeviceAssignment409:
       description: Conflict when assigning devices to, or releasing devices from, a QoS booking.
@@ -1276,8 +1278,10 @@ components:
           examples:
             GENERIC_409_ABORTED:
               $ref: "../common/CAMARA_common.yaml#/components/examples/GENERIC_409_ABORTED"
-            GENERIC_409_INCOMPATIBLE_STATE:
-              $ref: "../common/CAMARA_common.yaml#/components/examples/GENERIC_409_INCOMPATIBLE_STATE"
+            # Local example until Commonalities#734 is resolved and adopted; then revert to
+            # "../common/CAMARA_common.yaml#/components/examples/GENERIC_409_INCOMPATIBLE_STATE"
+            BookingIncompatibleState:
+              $ref: "#/components/examples/BookingIncompatibleState"
 
     CreateBooking422:
       description: Unprocessable Content when creating a QoS booking.
@@ -1710,3 +1714,11 @@ components:
         status: 422
         code: QOS_BOOKING_AND_ASSIGNMENT.DEVICE_QUOTA_EXCEEDED
         message: The number of devices exceeds the remaining device capacity of the booking.
+
+    BookingIncompatibleState:
+      summary: Booking in an incompatible state
+      description: The current `bookingStatus` of the booking does not allow the requested operation
+      value:
+        status: 409
+        code: INCOMPATIBLE_STATE
+        message: The booking is in a state that does not allow the requested operation.
