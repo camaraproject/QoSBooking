@@ -48,7 +48,7 @@ Feature: CAMARA QoS Booking and Assignment API, vwip - Operation deleteBooking
     And the response header "x-correlator" has same value as the request header "x-correlator"
     And the response body complies with the OAS schema at "#/components/schemas/BookingOutput"
     And the response property "$.bookingId" has the same value as the path parameter "bookingId"
-    And the response property "$.bookingStatus" is "REQUESTED"
+    And the response property "$.bookingStatus" has the same value as before the deletion request ("REQUESTED", "SCHEDULED" or "ACTIVATED")
     And the response property "$.statusInfo" is "DELETE_REQUESTED"
 
   # CONDITIONAL: applicable if the API provider processes the deletion synchronously. For asynchronous processing the check applies once the cancellation event has been received
@@ -63,10 +63,11 @@ Feature: CAMARA QoS Booking and Assignment API, vwip - Operation deleteBooking
     And the response property "$.code" is "NOT_FOUND"
     And the response property "$.message" contains a user friendly text
 
+  # CONDITIONAL: only applicable if the API provider processes the deletion asynchronously. No event is sent for a synchronous deletion (204)
   @qos_booking_and_assignment_deleteBooking_04_event_notification
   Scenario: Cancellation event is received after using sink
     Given a QoS booking has been created successfully with operation "createBooking" and includes a valid sink and sinkCredentials
-    And its deletion has been requested successfully with operation "deleteBooking"
+    And its deletion has been accepted for asynchronous processing (status code 202) with operation "deleteBooking"
     When the booking cancellation is completed
     Then an event is received at the address of the request property "$.sink"
     And the event header "Authorization" is set to "Bearer " + the value of the request property "$.sinkCredential.accessToken"
