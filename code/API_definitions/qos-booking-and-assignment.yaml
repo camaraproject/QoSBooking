@@ -117,7 +117,7 @@ info:
     | CloudEvent type | Fired when | Schema |
     |---|---|---|
     | `…v0.booking-status-changed` | Booking transitions to `SCHEDULED`, `ACTIVATED`, or `TERMINATED` | `EventBookingStatusChanged` |
-    | `…v0.assignment-status-changed` | Assign or release resolves from `REQUESTED` to a final state | `EventAssignmentStatusChanged` |
+    | `…v0.assignment-status-changed` | Assign or release resolves from `REQUESTED` to a final state, or a previously assigned device fails (`FAILURE`) | `EventAssignmentStatusChanged` |
 
     The `REQUESTED` intermediate state is not notified; it is observable only via polling
     (`GET /qos-bookings/{bookingId}`).
@@ -959,17 +959,23 @@ components:
           properties:
             data:
               type: object
-              description: Event details depending on the event type
+              description: |
+                Event details depending on the event type.
+                The new booking status and its reason are given by `bookingDetails.bookingStatus` and `bookingDetails.statusInfo`.
+                `bookingDetails.bookingStatus` is never `REQUESTED` in a notification; the `REQUESTED` state is observable only by polling.
               required:
                 - bookingDetails
-                - bookingStatus
               properties:
                 bookingDetails:
-                  $ref: "#/components/schemas/BookingOutput"
-                bookingStatus:
-                  $ref: "#/components/schemas/BookingStatusChanged"
-                statusInfo:
-                  $ref: "#/components/schemas/BookingStatusInfo"
+                  allOf:
+                    - $ref: "#/components/schemas/BookingOutput"
+                    - type: object
+                      properties:
+                        bookingStatus:
+                          enum:
+                            - SCHEDULED
+                            - ACTIVATED
+                            - TERMINATED
           required:
             - data
 
@@ -981,17 +987,24 @@ components:
           properties:
             data:
               type: object
-              description: Event details depending on the event type
+              description: |
+                Event details depending on the event type.
+                The new assignment status and its reason are given by `deviceDetails.assignmentStatus` and `deviceDetails.statusInfo`.
+                `deviceDetails.assignmentStatus` is never `REQUESTED` in a notification; the `REQUESTED` state is observable only by polling.
               required:
-                - assignmentStatus
                 - deviceDetails
               properties:
                 deviceDetails:
-                  $ref: "#/components/schemas/DeviceAssignmentOutput"
-                assignmentStatus:
-                  $ref: "#/components/schemas/AssignmentStatusChanged"
-                statusInfo:
-                  $ref: "#/components/schemas/AssignmentStatusInfo"
+                  allOf:
+                    - $ref: "#/components/schemas/DeviceAssignmentOutput"
+                    - type: object
+                      properties:
+                        assignmentStatus:
+                          enum:
+                            - ASSIGNED
+                            - PARTIAL_SUCCESS
+                            - RELEASED
+                            - FAILURE
           required:
             - data
 
@@ -1002,24 +1015,10 @@ components:
         * `ASSIGNED` - All requested devices are now assigned to the booking.
         * `PARTIAL_SUCCESS` - The request completed with partial success; some but not all devices were assigned or released. `statusInfo` has additional information.
         * `RELEASED` - One or more devices have been successfully released from the booking. Used exclusively by the release operation.
-        * `FAILURE` - The request failed. `statusInfo` may provide additional information about the reason.
+        * `FAILURE` - The request failed. `statusInfo` may provide additional information about the reason. In rare cases a previously successful assignment may also transition to `FAILURE` due to a catastrophic network event; this is notified with an `assignment-status-changed` event and `statusInfo` will provide additional context.
       type: string
       enum:
         - REQUESTED
-        - ASSIGNED
-        - PARTIAL_SUCCESS
-        - RELEASED
-        - FAILURE
-
-    AssignmentStatusChanged:
-      description: |
-        The resolved status delivered in an `EventAssignmentStatusChanged` callback after a prior `REQUESTED` outcome.
-        * `ASSIGNED` - All requested devices are assigned to the booking.
-        * `PARTIAL_SUCCESS` - The assignment completed with partial success.
-        * `RELEASED` - The release operation completed; one or more devices were released from the booking.
-        * `FAILURE` - The operation failed. In rare cases a previously successful assignment may also transition to `FAILURE` due to a catastrophic network event; `statusInfo` will provide additional context.
-      type: string
-      enum:
         - ASSIGNED
         - PARTIAL_SUCCESS
         - RELEASED
@@ -1035,17 +1034,6 @@ components:
       type: string
       enum:
         - REQUESTED
-        - SCHEDULED
-        - ACTIVATED
-        - TERMINATED
-
-    BookingStatusChanged:
-      description: |
-        Status values used in booking status-change notifications (EventBookingStatusChanged).
-        Excludes REQUESTED because notification callbacks only fire when the operator has
-        reached a confirmed or terminal state after a prior REQUESTED state.
-      type: string
-      enum:
         - SCHEDULED
         - ACTIVATED
         - TERMINATED
