@@ -424,10 +424,10 @@ paths:
             - Some providers will reject the DELETE and return `409 INCOMPATIBLE_STATE`, requiring the consumer to release all devices first via `POST /qos-bookings/{bookingId}/devices/release`.
             - Other providers will automatically release all assigned devices as part of the DELETE and return `204 No Content`.
             - API consumers SHOULD release all assigned devices before invoking DELETE for portable, provider-agnostic behavior.
-          - **Cancellation CloudEvent delivery:** When deletion is processed asynchronously (202), the `CANCELLED` `booking-status-changed` CloudEvent is delivered to the `sink` registered at booking creation. Consumers that require cancellation notifications MUST provide a `sink` when creating the booking.
+          - **Cancellation CloudEvent delivery:** When the deletion is processed asynchronously (202), a `booking-status-changed` CloudEvent with `bookingStatus` = `TERMINATED` and `statusInfo` = `BOOKING_CANCELLED` is delivered to the `sink` registered at booking creation once the deletion is completed. No event is sent for a synchronous deletion (204), where the response itself confirms the outcome, nor if the booking was already `TERMINATED`. Consumers that require cancellation notifications MUST provide a `sink` when creating the booking.
         Response Scenarios:
           - `HTTP 204:` The booking was cancelled immediately (synchronous success). No response body is returned.
-          - `HTTP 202 (bookingStatus: REQUESTED):` The request has been accepted for processing, but the deletion is not yet complete. A `booking-status-changed` notification will be sent with `bookingStatus` = `TERMINATED` and `statusInfo` = `BOOKING_CANCELLED`.
+          - `HTTP 202:` The request has been accepted for processing, but the deletion is not yet complete. `bookingStatus` keeps its current value (`REQUESTED`, `SCHEDULED` or `ACTIVATED`) and `statusInfo` is `DELETE_REQUESTED`. On completion, a `booking-status-changed` notification will be sent with `bookingStatus` = `TERMINATED` and `statusInfo` = `BOOKING_CANCELLED`.
           - `HTTP 4xx (Failure Condition):` The request failed, and an appropriate HTTP 4xx error code is returned with a specific status and description.
       operationId: deleteBooking
       parameters:
@@ -441,7 +441,7 @@ paths:
               $ref: "#/components/headers/x-correlator"
         "202":
           description: |
-            Deletion request accepted for asynchronous processing. `bookingStatus` = `REQUESTED`, `statusInfo` = `DELETE_REQUESTED`.
+            Deletion request accepted for asynchronous processing. `bookingStatus` keeps its current value (`REQUESTED`, `SCHEDULED` or `ACTIVATED`), `statusInfo` = `DELETE_REQUESTED`.
             A `booking-status-changed` CloudEvent with `bookingStatus` = `TERMINATED` and `statusInfo` = `BOOKING_CANCELLED` will be sent to the `sink` registered at booking creation.
           headers:
             x-correlator:
@@ -1054,7 +1054,9 @@ components:
         Transition reasons for `bookingStatus: SCHEDULED` or `ACTIVATED`:
         * `BOOKING_SCHEDULED` - The booking was confirmed and scheduled for a future start time.
         * `BOOKING_ACTIVATED` - Booking schedule started and the booking is activated.
-        * `DELETE_REQUESTED` - User requested deletion; async processing is in progress (`bookingStatus` transitions to `TERMINATED` on completion).
+
+        Transition reasons for any non-terminal `bookingStatus` (`REQUESTED`, `SCHEDULED` or `ACTIVATED`):
+        * `DELETE_REQUESTED` - User requested deletion; async processing is in progress. `bookingStatus` keeps its current value and transitions to `TERMINATED` on completion.
 
         Transition reasons for `bookingStatus: TERMINATED`:
         * `BOOKING_CANCELLED` - The booking was cancelled by the consumer or operator.
@@ -1472,7 +1474,7 @@ components:
 
     CANCELLATION_PENDING:
       summary: Cancellation is Requested
-      description: Delete a booking using a  valid `bookingId`.  Delete operation is pending as operator may need more time to process the request.
+      description: Delete a booking using a valid `bookingId`. Delete operation is pending as operator may need more time to process the request; `bookingStatus` keeps its current value (`ACTIVATED` in this example).
       value:
         bookingId: "8e2f6f30-0a1c-4c6b-92e1-1bd05aef1c58"
         bookingDeviceCount: 15
@@ -1486,7 +1488,7 @@ components:
             latitude: 37.735851
             longitude: -127.10066
           radius: 100
-        bookingStatus: "REQUESTED"
+        bookingStatus: "ACTIVATED"
         statusInfo: "DELETE_REQUESTED"
 
     ASSIGNMENT_INPUT_1:
