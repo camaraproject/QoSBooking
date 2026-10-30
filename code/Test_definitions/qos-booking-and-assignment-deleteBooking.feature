@@ -16,7 +16,7 @@ Feature: CAMARA QoS Booking and Assignment API, vwip - Operation deleteBooking
   # * An https endpoint able to receive CloudEvents, with a valid access token to be used as sinkCredential (credentialType ACCESSTOKEN).
   # * An access token emitted to a different API client than the one that created the QoS booking.
   #
-  # References to OAS spec schemas refer to schemas specified in qos-booking-and-assignment-wip-alignedto_r4dot4.yaml
+  # References to OAS spec schemas refer to schemas specified in qos-booking-and-assignment.yaml
 
   Background: Common "deleteBooking" setup
     Given an environment at "apiRoot"
@@ -75,8 +75,8 @@ Feature: CAMARA QoS Booking and Assignment API, vwip - Operation deleteBooking
     And the event body property "$.id" is unique
     And the event body property "$.type" is set to "org.camaraproject.qos-booking-and-assignment.v0.booking-status-changed"
     And the event body property "$.data.bookingDetails.bookingId" has the same value as createBooking response property "$.bookingId"
-    And the event body property "$.data.bookingStatus" is "TERMINATED"
-    And the event body property "$.data.statusInfo" is "BOOKING_CANCELLED"
+    And the event body property "$.data.bookingDetails.bookingStatus" is "TERMINATED"
+    And the event body property "$.data.bookingDetails.statusInfo" is "BOOKING_CANCELLED"
 
 ############################ Error Scenarios #############################################
 
