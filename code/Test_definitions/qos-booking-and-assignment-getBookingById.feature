@@ -13,7 +13,7 @@ Feature: CAMARA QoS Booking and Assignment API, vwip - Operation getBookingById
   # * A valid service area compliant with the Area schema.
   # * An access token emitted to a different API client than the one that created the QoS booking.
   #
-  # References to OAS spec schemas refer to schemas specified in qos-booking-and-assignment-wip-alignedto_r4dot4.yaml
+  # References to OAS spec schemas refer to schemas specified in qos-booking-and-assignment.yaml
 
   Background: Common "getBookingById" setup
     Given an environment at "apiRoot"
