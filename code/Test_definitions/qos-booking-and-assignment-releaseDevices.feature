@@ -287,9 +287,10 @@ Feature: CAMARA QoS Booking and Assignment API, vwip - Operation releaseDevices
     And the response property "$.code" is "ABORTED"
     And the response property "$.message" contains a user friendly text
 
+  # The terminated booking must not yet have been deleted (it is kept for at least 360 seconds after reaching TERMINATED)
   @qos_booking_and_assignment_releaseDevices_409.2_incompatible_state
   Scenario: Conflict due to the QoS booking being in an incompatible state
-    Given the path parameter "bookingId" is set to the identifier of a QoS booking in status "TERMINATED"
+    Given the path parameter "bookingId" is set to the identifier of a QoS booking in status "TERMINATED" that has not yet been deleted
     When the request "releaseDevices" is sent
     Then the response status code is 409
     And the response header "x-correlator" has same value as the request header "x-correlator"
