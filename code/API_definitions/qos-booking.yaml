@@ -838,7 +838,7 @@ components:
             GENERIC_422_UNNECESSARY_IDENTIFIER_DEVICE:
               $ref: "../common/CAMARA_common.yaml#/components/examples/GENERIC_422_UNNECESSARY_IDENTIFIER_DEVICE"
             GENERIC_422_PRIVATE_KEY_JWT_NOT_CONFIGURED:
-              $ref: "../common/CAMARA_common.yaml#/components/examples/GENERIC_422_PRIVATE_KEY_JWT_NOT_CONFIGURED"
+              $ref: "../common/CAMARA_event_common.yaml#/components/examples/GENERIC_422_PRIVATE_KEY_JWT_NOT_CONFIGURED"
             GENERIC_422_EVENT_NOTIFICATIONS_NOT_SUPPORTED:
               $ref: "../common/CAMARA_event_common.yaml#/components/examples/GENERIC_422_EVENT_NOTIFICATIONS_NOT_SUPPORTED"
             QOS_BOOKING_422_NOT_MANAGED_AREA_TYPE:
