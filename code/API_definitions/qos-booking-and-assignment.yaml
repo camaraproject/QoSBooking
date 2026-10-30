@@ -185,9 +185,9 @@ info:
     | `INVALID_ARGUMENT` | Malformed request body, unrecognised field, or invalid field value. | All write operations |
     | `OUT_OF_RANGE` | A numeric value (e.g. device count) exceeds its declared bounds. | `createBooking`, `assignDevices`, `releaseDevices` |
     | `QOS_BOOKING_AND_ASSIGNMENT.DURATION_OUT_OF_RANGE` | The requested booking duration exceeds the maximum allowed by the selected QoS profile. | `createBooking` only |
-    | `INVALID_CREDENTIAL` | The `sinkCredential.credentialType` is not supported (only `ACCESSTOKEN` and `PRIVATE_KEY_JWT` are). | `createBooking`, `assignDevices`, `releaseDevices` |
-    | `INVALID_TOKEN` | The `sinkCredential.accessTokenType` is not supported (only `bearer` is). | `createBooking`, `assignDevices`, `releaseDevices` |
-    | `INVALID_SINK` | The `sink` URL is not a valid callback endpoint or uses an unsupported protocol. | `createBooking`, `assignDevices`, `releaseDevices` |
+    | `INVALID_CREDENTIAL` | The `sinkCredential.credentialType` is not supported (only `ACCESSTOKEN` and `PRIVATE_KEY_JWT` are). | `createBooking` only |
+    | `INVALID_TOKEN` | The `sinkCredential.accessTokenType` is not supported (only `bearer` is). | `createBooking` only |
+    | `INVALID_SINK` | The `sink` URL is not a valid callback endpoint or uses an unsupported protocol. | `createBooking` only |
 
     ## API-specific 409 codes
 
@@ -201,7 +201,7 @@ info:
 
     | Code | When raised | Operations |
     |---|---|---|
-    | `EVENT_NOTIFICATIONS_NOT_SUPPORTED` | A `sink` is provided but the API provider does not support event notification delivery. The request is rejected and no booking or assignment is created; retry without `sink`. | `createBooking`, `assignDevices`, `releaseDevices` |
+    | `EVENT_NOTIFICATIONS_NOT_SUPPORTED` | A `sink` is provided but the API provider does not support event notification delivery. The request is rejected and no booking is created; retry without `sink`. | `createBooking` only |
     | `QOS_BOOKING_AND_ASSIGNMENT.DEVICE_QUOTA_EXCEEDED` | The number of devices in the request exceeds the remaining device capacity of the booking (`remainingDevices`). | `assignDevices` only |
 
     The device identification codes (`MISSING_IDENTIFIER`, `UNNECESSARY_IDENTIFIER`, `UNSUPPORTED_IDENTIFIER`, `SERVICE_NOT_APPLICABLE`) apply to `assignDevices`, `releaseDevices` and `retrieveBookingByDevice`, as described in the section "Identifying the device from the access token".
@@ -471,8 +471,7 @@ paths:
         - If the assignment is successful for all the devices, the call will return 201 success code with assignmentStatus `ASSIGNED` and the network is available for the said devices to connect and use them at the requested time
         - If the assignment request failed for some reason, this call we be retured with 4xx error code with appropirate status codes
         - If the number of devices in the request exceeds the remaining capacity of the booking (`remainingDevices`), the request is rejected with `422 QOS_BOOKING_AND_ASSIGNMENT.DEVICE_QUOTA_EXCEEDED`. The `statusInfo` value `QUOTA_EXCEEDED` is used only when the shortage is detected during asynchronous processing.
-        - If a `sink` is provided and the API provider does not support event notification delivery, the request is rejected with `422 EVENT_NOTIFICATIONS_NOT_SUPPORTED` and no device is assigned.
-        - This is an asynchronous call, and assignmentStatus = `REQUESTED` if the network is still processing your request. A callback will deliver the final assignmentStatus.
+        - This is an asynchronous call, and assignmentStatus = `REQUESTED` if the network is still processing your request. An `assignment-status-changed` notification to the `sink` registered at booking creation will deliver the final assignmentStatus.
         - If the network could not assign all the requested devices, then assignmentStatus = `PARTIAL_SUCCESS` and the `statusInfo` will have additional information.
         - If a 2-legged access token is used, then the device details SHOULD BE provided as part of the input, and the output will return the array of actually assigned devices.
         - If a 3-legged access token is used, then the device information are identified from the access token, so only one device is implicitly assigned, and the return value may not contain the assigned device information
@@ -492,42 +491,6 @@ paths:
               ASSIGNMENT_INPUT_2:
                 $ref: "#/components/examples/ASSIGNMENT_INPUT_2"
         required: true
-      callbacks:
-        notifications:
-          "{$request.body#/sink}":
-            post:
-              summary: Assignment notifications callback
-              description: |
-                Important: this endpoint is to be implemented by the API consumer.
-                The API provider will call this endpoint whenever any QoS Assignment change related event occurs.
-              operationId: postAssignmentNotification
-              parameters:
-                - $ref: "#/components/parameters/x-correlator"
-              requestBody:
-                required: true
-                content:
-                  application/cloudevents+json:
-                    schema:
-                      $ref: "#/components/schemas/QosBookingNotificationEvent"
-              responses:
-                "204":
-                  description: Successful notification
-                  headers:
-                    x-correlator:
-                      $ref: "#/components/headers/x-correlator"
-                "400":
-                  $ref: "#/components/responses/BadRequest400"
-                "401":
-                  $ref: "#/components/responses/Unauthenticated401"
-                "403":
-                  $ref: "#/components/responses/PermissionDenied403"
-                "410":
-                  $ref: "#/components/responses/SinkGone410"
-                "429":
-                  $ref: "#/components/responses/TooManyRequests429"
-              security:
-                - {}
-                - notificationsBearerAuth: []
       responses:
         "201":
           description: At least one device is assigned to the booking. The developer can call this endpoint multiple times with appropriate information
@@ -551,7 +514,7 @@ paths:
         "202":
           description: |
             Assignment request is accepted but pending decision.
-            Once the decision is made a callback notification will be sent with appropirate success or failure Confirmation
+            Once the decision is made a notification will be sent to the `sink` registered at booking creation with appropirate success or failure Confirmation
           headers:
             x-correlator:
               $ref: "#/components/headers/x-correlator"
@@ -564,7 +527,7 @@ paths:
                   $ref: "#/components/examples/ASSIGNMENT_PENDING"
 
         "400":
-          $ref: "#/components/responses/AssignOrReleaseDevices400"
+          $ref: "#/components/responses/BadRequestWithRange400"
         "401":
           $ref: "#/components/responses/Unauthenticated401"
         "403":
@@ -640,11 +603,10 @@ paths:
         - `Before the scheduled time:` The release will be mostly immediate.
         - `After the scheduled time (devices active):` The release may take time as the system needs to free up associated resources.
 
-         A callback notification will be sent once the devices are successfully released, provided one is registered with the device assignment. This endpoint functions in both synchronous and asynchronous modes.
+         An `assignment-status-changed` notification will be sent once the devices are successfully released, provided a `sink` was registered at booking creation. This endpoint functions in both synchronous and asynchronous modes.
         - If the device is assigned using 3-legged access token:
           - If the device is active, then release can happen in the same way.
           - If the device has failed for some reason, and the device information is not known, then the device can't be released from booking.
-        - If a `sink` is provided and the API provider does not support event notification delivery, the request is rejected with `422 EVENT_NOTIFICATIONS_NOT_SUPPORTED` and no device is released.
         - This call uses the POST method to comply with the CAMARA Commonalities guidelines for sending sensitive or complex data in API calls. Since the device field may contain personally identifiable information, it should not be sent via DELETE.
       operationId: releaseDevices
       parameters:
@@ -685,7 +647,7 @@ paths:
         "202":
           description: |
             The release request is accepted but is pending for internal reasons, or the release process has started and is currently in progress.
-            Once all devices are released, a callback notification will be sent with the appropriate success or failure confirmation
+            Once all devices are released, a notification will be sent to the `sink` registered at booking creation with the appropriate success or failure confirmation
           headers:
             x-correlator:
               $ref: "#/components/headers/x-correlator"
@@ -697,7 +659,7 @@ paths:
                 ASSIGNMENT_RELEASE_PENDING:
                   $ref: "#/components/examples/ASSIGNMENT_RELEASE_PENDING"
         "400":
-          $ref: "#/components/responses/AssignOrReleaseDevices400"
+          $ref: "#/components/responses/BadRequestWithRange400"
         "401":
           $ref: "#/components/responses/Unauthenticated401"
         "403":
@@ -707,7 +669,7 @@ paths:
         "409":
           $ref: "#/components/responses/DeviceAssignment409"
         "422":
-          $ref: "#/components/responses/ReleaseDevices422"
+          $ref: "#/components/responses/DeviceIdentifier422"
         "429":
           $ref: "#/components/responses/TooManyRequests429"
       security:
@@ -910,10 +872,6 @@ components:
       properties:
         devices:
           $ref: "#/components/schemas/Devices"
-        sink:
-          $ref: "../common/CAMARA_event_common.yaml#/components/schemas/Sink"
-        sinkCredential:
-          $ref: "../common/CAMARA_event_common.yaml#/components/schemas/SinkCredential"
 
     DeviceAssignmentOutput:
       description: |
@@ -1200,6 +1158,8 @@ components:
     # Catalogue error responses provided by the Commonalities common files
     BadRequest400:
       $ref: "../common/CAMARA_common.yaml#/components/responses/BadRequest400"
+    BadRequestWithRange400:
+      $ref: "../common/CAMARA_common.yaml#/components/responses/BadRequestWithRange400"
     Unauthenticated401:
       $ref: "../common/CAMARA_common.yaml#/components/responses/Unauthenticated401"
     PermissionDenied403:
@@ -1249,40 +1209,6 @@ components:
               $ref: "../common/CAMARA_common.yaml#/components/examples/GENERIC_400_OUT_OF_RANGE"
             DurationOutOfRangeForQoSProfile:
               $ref: "#/components/examples/DurationOutOfRangeForQoSProfile"
-            GENERIC_400_INVALID_CREDENTIAL:
-              $ref: "../common/CAMARA_event_common.yaml#/components/examples/GENERIC_400_INVALID_CREDENTIAL"
-            GENERIC_400_INVALID_TOKEN:
-              $ref: "../common/CAMARA_event_common.yaml#/components/examples/GENERIC_400_INVALID_TOKEN"
-            GENERIC_400_INVALID_SINK:
-              $ref: "../common/CAMARA_event_common.yaml#/components/examples/GENERIC_400_INVALID_SINK"
-
-    AssignOrReleaseDevices400:
-      description: Bad Request when assigning devices to, or releasing devices from, a QoS booking.
-      headers:
-        x-correlator:
-          $ref: "#/components/headers/x-correlator"
-      content:
-        application/json:
-          schema:
-            allOf:
-              - $ref: "../common/CAMARA_common.yaml#/components/schemas/ErrorInfo"
-              - type: object
-                properties:
-                  status:
-                    enum:
-                      - 400
-                  code:
-                    enum:
-                      - INVALID_ARGUMENT
-                      - OUT_OF_RANGE
-                      - INVALID_CREDENTIAL
-                      - INVALID_TOKEN
-                      - INVALID_SINK
-          examples:
-            GENERIC_400_INVALID_ARGUMENT:
-              $ref: "../common/CAMARA_common.yaml#/components/examples/GENERIC_400_INVALID_ARGUMENT"
-            GENERIC_400_OUT_OF_RANGE:
-              $ref: "../common/CAMARA_common.yaml#/components/examples/GENERIC_400_OUT_OF_RANGE"
             GENERIC_400_INVALID_CREDENTIAL:
               $ref: "../common/CAMARA_event_common.yaml#/components/examples/GENERIC_400_INVALID_CREDENTIAL"
             GENERIC_400_INVALID_TOKEN:
@@ -1405,7 +1331,6 @@ components:
                       - MISSING_IDENTIFIER
                       - UNSUPPORTED_IDENTIFIER
                       - UNNECESSARY_IDENTIFIER
-                      - EVENT_NOTIFICATIONS_NOT_SUPPORTED
                       - QOS_BOOKING_AND_ASSIGNMENT.DEVICE_QUOTA_EXCEEDED
           examples:
             GENERIC_422_SERVICE_NOT_APPLICABLE:
@@ -1416,44 +1341,8 @@ components:
               $ref: "../common/CAMARA_common.yaml#/components/examples/GENERIC_422_UNSUPPORTED_IDENTIFIER_DEVICE"
             GENERIC_422_UNNECESSARY_IDENTIFIER_DEVICE:
               $ref: "../common/CAMARA_common.yaml#/components/examples/GENERIC_422_UNNECESSARY_IDENTIFIER_DEVICE"
-            GENERIC_422_EVENT_NOTIFICATIONS_NOT_SUPPORTED:
-              $ref: "../common/CAMARA_event_common.yaml#/components/examples/GENERIC_422_EVENT_NOTIFICATIONS_NOT_SUPPORTED"
             DeviceQuotaExceededForBooking:
               $ref: "#/components/examples/DeviceQuotaExceededForBooking"
-
-    ReleaseDevices422:
-      description: Unprocessable Content when releasing devices from a QoS booking.
-      headers:
-        x-correlator:
-          $ref: "#/components/headers/x-correlator"
-      content:
-        application/json:
-          schema:
-            allOf:
-              - $ref: "../common/CAMARA_common.yaml#/components/schemas/ErrorInfo"
-              - type: object
-                properties:
-                  status:
-                    enum:
-                      - 422
-                  code:
-                    enum:
-                      - SERVICE_NOT_APPLICABLE
-                      - MISSING_IDENTIFIER
-                      - UNSUPPORTED_IDENTIFIER
-                      - UNNECESSARY_IDENTIFIER
-                      - EVENT_NOTIFICATIONS_NOT_SUPPORTED
-          examples:
-            GENERIC_422_SERVICE_NOT_APPLICABLE:
-              $ref: "../common/CAMARA_common.yaml#/components/examples/GENERIC_422_SERVICE_NOT_APPLICABLE"
-            GENERIC_422_MISSING_IDENTIFIER_DEVICE:
-              $ref: "../common/CAMARA_common.yaml#/components/examples/GENERIC_422_MISSING_IDENTIFIER_DEVICE"
-            GENERIC_422_UNSUPPORTED_IDENTIFIER_DEVICE:
-              $ref: "../common/CAMARA_common.yaml#/components/examples/GENERIC_422_UNSUPPORTED_IDENTIFIER_DEVICE"
-            GENERIC_422_UNNECESSARY_IDENTIFIER_DEVICE:
-              $ref: "../common/CAMARA_common.yaml#/components/examples/GENERIC_422_UNNECESSARY_IDENTIFIER_DEVICE"
-            GENERIC_422_EVENT_NOTIFICATIONS_NOT_SUPPORTED:
-              $ref: "../common/CAMARA_event_common.yaml#/components/examples/GENERIC_422_EVENT_NOTIFICATIONS_NOT_SUPPORTED"
 
   examples:
     BOOKING_INPUT_1:
@@ -1609,12 +1498,6 @@ components:
               publicAddress: "203.0.113.0"
               publicPort: 59765
           - ipv6Address: "2001:db8:85a3:8d3:1319:8a2e:370:7344"
-        sink: "https://application-server.com/notifications"
-        sinkCredential:
-          credentialType: ACCESSTOKEN
-          accessToken: "<access_token>"
-          accessTokenExpiresUtc: "2025-12-31T23:59:59Z"
-          accessTokenType: bearer
 
     ASSIGNMENT_INPUT_2:
       summary: Assignment Input - Phone Number only
@@ -1623,12 +1506,6 @@ components:
         devices:
           - phoneNumber: "+14145550101"
           - phoneNumber: "+14145550202"
-        sink: "https://application-server.com/notifications"
-        sinkCredential:
-          credentialType: ACCESSTOKEN
-          accessToken: "<access_token>"
-          accessTokenExpiresUtc: "2025-12-31T23:59:59Z"
-          accessTokenType: bearer
 
     ASSIGNMENT_SUCCESSFUL:
       summary: Assignment Successful
