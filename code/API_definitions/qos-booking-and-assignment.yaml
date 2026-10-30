@@ -72,7 +72,7 @@ info:
     | `REQUESTED` | Booking accepted and `bookingId` assigned; operator is validating network availability. `statusInfo: VALIDATION_PENDING`. | None — poll or await `booking-status-changed`. |
     | `SCHEDULED` | Confirmed; QoS resources reserved. Devices may be assigned now. `statusInfo: BOOKING_SCHEDULED`. | `booking-status-changed` (`bookingStatus: SCHEDULED`). |
     | `ACTIVATED` | Booking window open; QoS resources live. `statusInfo: BOOKING_ACTIVATED`. | `booking-status-changed` (`bookingStatus: ACTIVATED`). |
-    | `TERMINATED` | Terminal. `statusInfo` carries the reason: `BOOKING_CANCELLED`, `BOOKING_EXPIRED`, `DURATION_EXPIRED`, `SERVICE_NOT_AVAILABLE`, `QOS_PROFILE_NOT_SUPPORTED`, `NETWORK_TERMINATED`, or `BOOKING_UNKNOWN_ERROR`. | `booking-status-changed` (`bookingStatus: TERMINATED`). |
+    | `TERMINATED` | Terminal. `statusInfo` carries the reason: `BOOKING_CANCELLED`, `DURATION_EXPIRED`, `SERVICE_NOT_AVAILABLE`, `QOS_PROFILE_NOT_SUPPORTED`, `NETWORK_TERMINATED`, or `BOOKING_UNKNOWN_ERROR`. | `booking-status-changed` (`bookingStatus: TERMINATED`). |
 
     A booking may transition from any non-terminal state directly to `TERMINATED`.
     A `TERMINATED` booking is not immediately released: unless it was deleted with `deleteBooking`,
@@ -108,7 +108,7 @@ info:
     | `REQUESTED` | assign, release | Request accepted; final state will arrive via `assignment-status-changed` notification. |
     | `ASSIGNED` | assign only | All requested devices are now assigned to the booking. |
     | `RELEASED` | release only | All requested devices have been released from the booking. |
-    | `PARTIAL_SUCCESS` | assign, release | Some but not all devices were processed. The response `deviceDetails` enumerates the successfully processed devices; absent devices were not. `statusInfo` provides the reason (e.g.  `DEVICE_NOT_FOUND`). |
+    | `PARTIAL_SUCCESS` | assign, release | Some but not all devices were processed. The response `devices` enumerates the successfully processed devices; absent devices were not. `statusInfo` provides the reason (e.g.  `DEVICE_NOT_FOUND`). |
     | `FAILURE` | assign, release | Operation failed for all requested devices. `statusInfo` provides the reason. |
 
     ## Notifications
@@ -628,7 +628,7 @@ paths:
       responses:
         "200":
           description: |
-            At least one of the requested devices has been successfully released from the booking.
+            The release request is completed; `assignmentStatus` indicates whether all (`RELEASED`) or only some (`PARTIAL_SUCCESS`) of the requested devices were released.
 
             Example:
 
@@ -1018,7 +1018,7 @@ components:
         * `REQUESTED` - The request has been accepted but is still being processed asynchronously. A callback (`EventAssignmentStatusChanged`) will deliver the final outcome.
         * `ASSIGNED` - All requested devices are now assigned to the booking.
         * `PARTIAL_SUCCESS` - The request completed with partial success; some but not all devices were assigned or released. `statusInfo` has additional information.
-        * `RELEASED` - One or more devices have been successfully released from the booking. Used exclusively by the release operation.
+        * `RELEASED` - All requested devices have been released from the booking. Used exclusively by the release operation.
         * `FAILURE` - The request failed. `statusInfo` may provide additional information about the reason. In rare cases a previously successful assignment may also transition to `FAILURE` due to a catastrophic network event; this is notified with an `assignment-status-changed` event and `statusInfo` will provide additional context.
       type: string
       enum:
@@ -1034,7 +1034,7 @@ components:
         * `REQUESTED` - The booking request has been accepted but the operator has not yet confirmed availability. A `booking-status-changed` notification will deliver the final state.
         * `SCHEDULED` - The booking has been confirmed and is reserved for a future start time. Devices may be assigned now.
         * `ACTIVATED` - The booking window is open and QoS resources are live. Assigned devices may use them subject to eligibility.
-        * `TERMINATED` - The booking has reached a terminal state. Unless deleted with `deleteBooking`, the booking is deleted automatically, at earliest 360 seconds after reaching `TERMINATED`. `statusInfo` provides the reason (`BOOKING_CANCELLED`, `BOOKING_EXPIRED`, `SERVICE_NOT_AVAILABLE`, `QOS_PROFILE_NOT_SUPPORTED`, `NETWORK_TERMINATED`, `DURATION_EXPIRED`, or `BOOKING_UNKNOWN_ERROR`).
+        * `TERMINATED` - The booking has reached a terminal state. Unless deleted with `deleteBooking`, the booking is deleted automatically, at earliest 360 seconds after reaching `TERMINATED`. `statusInfo` provides the reason (`BOOKING_CANCELLED`, `SERVICE_NOT_AVAILABLE`, `QOS_PROFILE_NOT_SUPPORTED`, `NETWORK_TERMINATED`, `DURATION_EXPIRED`, or `BOOKING_UNKNOWN_ERROR`).
       type: string
       enum:
         - REQUESTED
@@ -1057,12 +1057,13 @@ components:
 
         Transition reasons for `bookingStatus: TERMINATED`:
         * `BOOKING_CANCELLED` - The booking was cancelled by the consumer or operator.
-        * `BOOKING_EXPIRED` - The booking window ended normally.
         * `SERVICE_NOT_AVAILABLE` - The booking could not be fulfilled; the operator could not support the service area, device count, or QoS profile in the requested time.
         * `QOS_PROFILE_NOT_SUPPORTED` - The requested QoS profile is not supported by the operator.
-        * `DURATION_EXPIRED` - The booking was terminated because the requested duration expired.
+        * `DURATION_EXPIRED` - The booking window ended because the booking duration expired.
         * `NETWORK_TERMINATED` - The network terminated the QoS booking for an unknown reason.
         * `BOOKING_UNKNOWN_ERROR` - An unknown error occurred.
+
+        Deprecated values:
         * `BOOKING_ACCEPTED` - Deprecated. Use `BOOKING_SCHEDULED` instead.
       type: string
       pattern: ^[A-Z][A-Z0-9_]*$
@@ -1075,7 +1076,7 @@ components:
         Values are not exhaustive; API providers MAY use additional implementation-specific values.
 
         * `ASSIGNMENT_COMPLETED` - The assignment of devices completed successfully.
-        * `DEVICE_RELEASED` - One or more devices were successfully released from the booking.
+        * `DEVICE_RELEASED` - The release of the requested devices completed successfully.
         * `RELEASE_PENDING` - Release of requested devices is currently in progress. Some might have already been released and some are still being processed.
         * `DEVICE_NOT_FOUND` - One or more devices could not be found or validated.
         * `DEVICE_UNKNOWN_ERROR` - One or more devices failed to be assigned or released due to an unknown error.
@@ -1084,7 +1085,7 @@ components:
         * `VALIDATION_PENDING` - The assignment request is pending validation.
         * `BOOKING_INVALID` - The booking referenced in the request is invalid.
         * `BOOKING_CANCELLED` - The booking referenced has been cancelled.
-        * `BOOKING_EXPIRED` - The booking referenced has expired and is no longer active.
+        * `DURATION_EXPIRED` - The booking referenced has expired (its duration ended) and is no longer active.
         * `BOOKING_TERMINATED` - The booking was terminated by the operator.
       type: string
       pattern: ^[A-Z][A-Z0-9_]*$
