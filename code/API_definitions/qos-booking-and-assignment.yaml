@@ -511,10 +511,6 @@ paths:
                   $ref: "#/components/examples/ASSIGNMENT_SUCCESSFUL"
                 ASSIGNMENT_PARTIAL_SUCCESS:
                   $ref: "#/components/examples/ASSIGNMENT_PARTIAL_SUCCESS"
-                ASSIGNMENT_FAILURE_1:
-                  $ref: "#/components/examples/ASSIGNMENT_FAILURE_1"
-                ASSIGNMENT_FAILURE_2:
-                  $ref: "#/components/examples/ASSIGNMENT_FAILURE_2"
 
         "202":
           description: |
@@ -1533,7 +1529,7 @@ components:
 
     ASSIGNMENT_PARTIAL_SUCCESS:
       summary: Assignment Partially Successful
-      description: Assignment is successful and some but not all of the requested devices are assigned.
+      description: Some but not all of the requested devices are assigned. `statusInfo` gives the reason for the devices that were not assigned.
       value:
         bookingDetails:
           bookingId: "8e2f6f30-0a1c-4c6b-92e1-1bd05aef1c58"
@@ -1554,7 +1550,7 @@ components:
               publicAddress: "203.0.113.0"
               publicPort: 59765
         assignmentStatus: "PARTIAL_SUCCESS"
-        statusInfo: "ASSIGNMENT_COMPLETED"
+        statusInfo: "DEVICE_NOT_FOUND"
 
     ASSIGNMENT_PENDING:
       summary: Assignment Pending
@@ -1575,33 +1571,6 @@ components:
             radius: 100
         assignmentStatus: "REQUESTED"
         statusInfo: "VALIDATION_PENDING"
-
-    ASSIGNMENT_FAILURE_1:
-      summary: Assignment Failed
-      description: Assignment request failed. Booking is still valid.
-      value:
-        bookingDetails:
-          bookingId: "8e2f6f30-0a1c-4c6b-92e1-1bd05aef1c58"
-          bookingDeviceCount: 15
-          remainingDevices: 15
-          qosProfile: "QOS_MEDIA_BROADCAST"
-          startTime: "2025-10-27T15:00:00.000Z"
-          duration: 3600
-          serviceArea:
-            areaType: "CIRCLE"
-            center:
-              latitude: 37.735851
-              longitude: -127.10066
-            radius: 100
-        assignmentStatus: "FAILURE"
-        statusInfo: "QUOTA_EXCEEDED"
-
-    ASSIGNMENT_FAILURE_2:
-      summary: Assignment Failed for unknown booking information
-      description: Assignment request failed. Provided `bookingId` is correctly formed but not available. In such a situation, value contains only `assignmentStatus` and `statusInfo`.
-      value:
-        assignmentStatus: "FAILURE"
-        statusInfo: "BOOKING_INVALID"
 
     ASSIGNMENT_RELEASE_INPUT:
       summary: Assignment Release Input
