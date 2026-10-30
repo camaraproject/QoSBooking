@@ -14,7 +14,7 @@ Feature: CAMARA QoS Booking and Assignment API, vwip - Operation createBooking
   # * A valid service area compliant with the Area schema.
   # * An https endpoint able to receive CloudEvents, with a valid access token to be used as sinkCredential (credentialType ACCESSTOKEN).
   #
-  # References to OAS spec schemas refer to schemas specified in qos-booking-and-assignment-wip-alignedto_r4dot4.yaml
+  # References to OAS spec schemas refer to schemas specified in qos-booking-and-assignment.yaml
 
   Background: Common "createBooking" setup
     Given an environment at "apiRoot"
@@ -108,7 +108,7 @@ Feature: CAMARA QoS Booking and Assignment API, vwip - Operation createBooking
     And the response body complies with the OAS schema at "#/components/schemas/BookingOutput"
     And the response property "$.bookingStatus" is "TERMINATED"
     And the response property "$.statusInfo" exists
-    And the response property "$.bookingId" does not exist
+    And the response property "$.bookingId" exists and is a valid UUID
 
   @qos_booking_and_assignment_createBooking_07_sink_echoed
   Scenario: Sink is returned in the creation response when event delivery is accepted
@@ -140,7 +140,7 @@ Feature: CAMARA QoS Booking and Assignment API, vwip - Operation createBooking
     And the event body property "$.id" is unique
     And the event body property "$.type" is set to "org.camaraproject.qos-booking-and-assignment.v0.booking-status-changed"
     And the event body property "$.data.bookingDetails.bookingId" has the same value as createBooking response property "$.bookingId"
-    And the event body property "$.data.bookingStatus" is "SCHEDULED", "ACTIVATED" or "TERMINATED"
+    And the event body property "$.data.bookingDetails.bookingStatus" is "SCHEDULED", "ACTIVATED" or "TERMINATED"
 
 ############################ Error Scenarios #############################################
 
@@ -429,6 +429,20 @@ Feature: CAMARA QoS Booking and Assignment API, vwip - Operation createBooking
     And the response header "Content-Type" is "application/json"
     And the response property "$.status" is 422
     And the response property "$.code" is "EVENT_NOTIFICATIONS_NOT_SUPPORTED"
+    And the response property "$.message" contains a user friendly text
+
+  # CONDITIONAL: only applicable if the API provider supports sinkCredential.credentialType PRIVATE_KEY_JWT
+  @qos_booking_and_assignment_createBooking_422.2_private_key_jwt_not_configured
+  Scenario: Private JWT Key not configured for the notification sink
+    Given the request body includes property "$.sink" with a valid value
+    And the request body property "$.sinkCredential.credentialType" is set to "PRIVATE_KEY_JWT"
+    And the Private JWT key mechanism is not pre-configured for the API consumer
+    When the request "createBooking" is sent
+    Then the response status code is 422
+    And the response header "x-correlator" has same value as the request header "x-correlator"
+    And the response header "Content-Type" is "application/json"
+    And the response property "$.status" is 422
+    And the response property "$.code" is "PRIVATE_KEY_JWT_NOT_CONFIGURED"
     And the response property "$.message" contains a user friendly text
 
   # Generic 429 errors
