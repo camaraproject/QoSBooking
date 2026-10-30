@@ -6,7 +6,7 @@ Feature: CAMARA QoS Booking and Assignment API, vwip - Operation releaseDevices
   # Implementation indications:
   # * apiRoot: API root of the server URL
   # * Scenarios marked as CONDITIONAL in their comments apply only if the implementation supports the option they test; the implementation informs the tester of the supported options.
-  # * Whether event notification delivery (sink) is supported. If not, the scenarios for 422 EVENT_NOTIFICATIONS_NOT_SUPPORTED apply.
+  # * Whether event notification delivery is supported for the sink registered with createBooking.
   # * Whether releaseDevices is resolved synchronously (200), asynchronously (202 followed by an assignment-status-changed event) or both.
   # * List of device identifier types which are not supported, among: phoneNumber, ipv4Address, ipv6Address. networkAccessIdentifier is not currently supported by this API.
   #
@@ -16,10 +16,10 @@ Feature: CAMARA QoS Booking and Assignment API, vwip - Operation releaseDevices
   # * At least two valid devices (device objects) applicable for the service, identified by identifier types supported by the implementation.
   # * A device object identifying a device commercialized by the implementation for which the service is not applicable, if any.
   # * A 2-legged access token, and a 3-legged access token identifying a single device.
-  # * An https endpoint able to receive CloudEvents, with a valid access token to be used as sinkCredential (credentialType ACCESSTOKEN).
+  # * An https endpoint able to receive CloudEvents, with a valid access token to be used as sinkCredential (credentialType ACCESSTOKEN) when creating the QoS booking.
   # * An access token emitted to a different API client than the one that created the QoS booking.
   #
-  # References to OAS spec schemas refer to schemas specified in qos-booking-and-assignment-wip-alignedto_r4dot4.yaml
+  # References to OAS spec schemas refer to schemas specified in qos-booking-and-assignment.yaml
 
   Background: Common "releaseDevices" setup
     Given an environment at "apiRoot"
@@ -97,17 +97,17 @@ Feature: CAMARA QoS Booking and Assignment API, vwip - Operation releaseDevices
   # CONDITIONAL: only applicable if the API provider resolves releases asynchronously and supports event notifications
   @qos_booking_and_assignment_releaseDevices_06_event_notification
   Scenario: Event is received when the release outcome is known after using sink
-    Given a device release has been accepted for asynchronous processing (status code 202) with operation "releaseDevices"
-    And the request included a valid sink and sinkCredentials
+    Given the QoS booking has been created with operation "createBooking" and includes a valid sink and sinkCredentials
+    And a device release has been accepted for asynchronous processing (status code 202) with operation "releaseDevices"
     When the release outcome is known
-    Then an event is received at the address of the request property "$.sink"
-    And the event header "Authorization" is set to "Bearer " + the value of the request property "$.sinkCredential.accessToken"
+    Then an event is received at the address of the createBooking request property "$.sink"
+    And the event header "Authorization" is set to "Bearer " + the value of the createBooking request property "$.sinkCredential.accessToken"
     And the event header "Content-Type" is set to "application/cloudevents+json"
     And the event body complies with the OAS schema at "#/components/schemas/EventAssignmentStatusChanged"
     And the event body property "$.id" is unique
     And the event body property "$.type" is set to "org.camaraproject.qos-booking-and-assignment.v0.assignment-status-changed"
     And the event body property "$.data.deviceDetails.bookingDetails.bookingId" has the same value as the path parameter "bookingId" of the request
-    And the event body property "$.data.assignmentStatus" is "RELEASED", "PARTIAL_SUCCESS" or "FAILURE"
+    And the event body property "$.data.deviceDetails.assignmentStatus" is "RELEASED", "PARTIAL_SUCCESS" or "FAILURE"
 
 ############################ Error Scenarios #############################################
 
@@ -148,9 +148,8 @@ Feature: CAMARA QoS Booking and Assignment API, vwip - Operation releaseDevices
     And the response property "$.message" contains a user friendly text
 
     Examples:
-      | property         | value |
-      | $.devices        | []    |
-      | $.sinkCredential | {}    |
+      | property  | value |
+      | $.devices | []    |
 
   @qos_booking_and_assignment_releaseDevices_400.4_invalid_booking_id
   Scenario: Invalid bookingId path parameter
@@ -172,56 +171,8 @@ Feature: CAMARA QoS Booking and Assignment API, vwip - Operation releaseDevices
     And the response property "$.code" is "INVALID_ARGUMENT"
     And the response property "$.message" contains a user friendly text
 
-  # PLAIN and REFRESHTOKEN are not valid credentialType values in the common SinkCredential schema, so a schema validator may fail
-  # the request with INVALID_ARGUMENT instead of INVALID_CREDENTIAL, and both could be accepted
-  @qos_booking_and_assignment_releaseDevices_400.6_invalid_sink_credential
-  Scenario Outline: Invalid credential
-    Given the request body property "$.sinkCredential.credentialType" is set to "<unsupported_credential_type>"
-    When the request "releaseDevices" is sent
-    Then the response status code is 400
-    And the response header "x-correlator" has same value as the request header "x-correlator"
-    And the response header "Content-Type" is "application/json"
-    And the response property "$.status" is 400
-    And the response property "$.code" is "INVALID_CREDENTIAL" or "INVALID_ARGUMENT"
-    And the response property "$.message" contains a user friendly text
-
-    Examples:
-      | unsupported_credential_type |
-      | PLAIN                       |
-      | REFRESHTOKEN                |
-
-  # Only "bearer" is considered in the schema so a generic schema validator may fail and generate a 400 INVALID_ARGUMENT without further distinction,
-  # and both could be accepted
-  @qos_booking_and_assignment_releaseDevices_400.7_sink_credential_invalid_token
-  Scenario: Invalid token
-    Given the request body property "$.sinkCredential.accessTokenType" is set to a value other than "bearer"
-    When the request "releaseDevices" is sent
-    Then the response status code is 400
-    And the response header "x-correlator" has same value as the request header "x-correlator"
-    And the response header "Content-Type" is "application/json"
-    And the response property "$.status" is 400
-    And the response property "$.code" is "INVALID_TOKEN" or "INVALID_ARGUMENT"
-    And the response property "$.message" contains a user friendly text
-
-  # The sink must be an https URL. A generic schema validator may report INVALID_ARGUMENT instead of INVALID_SINK, and both could be accepted
-  @qos_booking_and_assignment_releaseDevices_400.8_invalid_sink
-  Scenario Outline: Invalid sink
-    Given the request body property "$.sink" is set to "<invalid_sink>"
-    When the request "releaseDevices" is sent
-    Then the response status code is 400
-    And the response header "x-correlator" has same value as the request header "x-correlator"
-    And the response header "Content-Type" is "application/json"
-    And the response property "$.status" is 400
-    And the response property "$.code" is "INVALID_SINK" or "INVALID_ARGUMENT"
-    And the response property "$.message" contains a user friendly text
-
-    Examples:
-      | invalid_sink                     |
-      | http://endpoint.example.com/sink |
-      | ftp://endpoint.example.com/sink  |
-
   # The API rejects undeclared properties (see section Request body strictness of the API description)
-  @qos_booking_and_assignment_releaseDevices_400.9_unknown_property
+  @qos_booking_and_assignment_releaseDevices_400.6_unknown_property
   Scenario: Request body contains a property not declared in the schema
     Given the request body includes an undeclared property "$.unexpectedParam" set to any value
     When the request "releaseDevices" is sent
@@ -234,7 +185,7 @@ Feature: CAMARA QoS Booking and Assignment API, vwip - Operation releaseDevices
 
   # The maximum is considered in the schema so a generic schema validator may fail and generate a 400 INVALID_ARGUMENT without further distinction,
   # and both could be accepted
-  @qos_booking_and_assignment_releaseDevices_400.10_too_many_devices
+  @qos_booking_and_assignment_releaseDevices_400.7_too_many_devices
   Scenario: The devices array exceeds the maximum of 50
     Given the request body property "$.devices" is set to an array of 51 valid device identifiers compliant with the schema at "#/components/schemas/Device"
     When the request "releaseDevices" is sent
@@ -428,22 +379,6 @@ Feature: CAMARA QoS Booking and Assignment API, vwip - Operation releaseDevices
     Then the response status code is 422
     And the response property "$.status" is 422
     And the response property "$.code" is "SERVICE_NOT_APPLICABLE"
-    And the response property "$.message" contains a user friendly text
-
-  # 422 errors
-
-  # CONDITIONAL: only applicable if the API provider does not implement event notification delivery
-  # The resource MUST NOT be created when the request is rejected
-  @qos_booking_and_assignment_releaseDevices_422.1_event_notifications_not_supported
-  Scenario: Event notifications capability not supported
-    Given the request body includes property "$.sink" with a valid value
-    And the API provider does not implement event notifications delivery for the operation "releaseDevices"
-    When the request "releaseDevices" is sent
-    Then the response status code is 422
-    And the response header "x-correlator" has same value as the request header "x-correlator"
-    And the response header "Content-Type" is "application/json"
-    And the response property "$.status" is 422
-    And the response property "$.code" is "EVENT_NOTIFICATIONS_NOT_SUPPORTED"
     And the response property "$.message" contains a user friendly text
 
   # Generic 429 errors
