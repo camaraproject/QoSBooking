@@ -289,9 +289,10 @@ Feature: CAMARA QoS Booking and Assignment API, vwip - Operation assignDevices
     And the response property "$.message" contains a user friendly text
 
   # Devices can only be assigned to a booking in status SCHEDULED or ACTIVATED
+  # The terminated booking must not yet have been deleted (it is kept for at least 360 seconds after reaching TERMINATED)
   @qos_booking_and_assignment_assignDevices_409.2_incompatible_state
   Scenario: Conflict due to the QoS booking being in an incompatible state
-    Given the path parameter "bookingId" is set to the identifier of a QoS booking in status "TERMINATED"
+    Given the path parameter "bookingId" is set to the identifier of a QoS booking in status "TERMINATED" that has not yet been deleted
     When the request "assignDevices" is sent
     Then the response status code is 409
     And the response header "x-correlator" has same value as the request header "x-correlator"
