@@ -611,6 +611,19 @@ Feature: CAMARA QoS Booking API, vwip - Operation createBooking
     And the response property "$.code" is "EVENT_NOTIFICATIONS_NOT_SUPPORTED"
     And the response property "$.message" contains a user friendly text
 
+  @qos_booking_createBooking_422.06_private_key_jwt_not_configured
+  Scenario: PRIVATE_KEY_JWT sink credential used without pre-shared configuration
+    Given the request body includes property "$.sink" with a valid value
+    And the request body property "$.sinkCredential.credentialType" is set to "PRIVATE_KEY_JWT"
+    And the PRIVATE_KEY_JWT mechanism is not pre-configured for the API client
+    When the request "createBooking" is sent
+    Then the response status code is 422
+    And the response header "x-correlator" has same value as the request header "x-correlator"
+    And the response header "Content-Type" is "application/json"
+    And the response property "$.status" is 422
+    And the response property "$.code" is "PRIVATE_KEY_JWT_NOT_CONFIGURED"
+    And the response property "$.message" contains a user friendly text
+
 # Response 429
 
 ## Code QUOTA_EXCEEDED
