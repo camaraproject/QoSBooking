@@ -193,7 +193,7 @@ Feature: CAMARA QoS Booking API, vwip - Operation deleteBooking
 
   # Code TOO_MANY_REQUESTS
 
-  @qos_booking_createBooking_429.01_Too_Many_Requests
+  @qos_booking_deleteBooking_429.01_Too_Many_Requests
   #To test this scenario environment has to be configured to reject requests reaching the threshold limit set.
   Scenario: Request is rejected due to threshold policy
     Given a valid request for "deleteBooking"
