@@ -143,6 +143,7 @@ paths:
 
         **NOTES:**
         - When the booking status becomes `TERMINATED`, the QoS Booking resource is not immediately released, but will get deleted automatically, at earliest 360 seconds after.
+        - Regarding the serviceArea, when the booking is successful, the booked area will be made exactly as requested, with no modifications made by API provider.
 
         This behavior allows clients which are not receiving notification events but are polling, to get the booking status information.
         - The access token may be either 2-legged or 3-legged. See "Identifying the device from the access token" for further information

@@ -54,7 +54,6 @@ Feature: CAMARA QoS Booking API, vwip - Operation createBooking
       | $.applicationServerPorts | exists only if provided in the request body and with the same value                                       |
       | $.sink                   | exists only if provided in the request body and with the same value                                       |
       | $.sinkCredential         | does not exist in the response                                                                            |
-    # Note: serviceArea equality agreed in CQM meeting 2026-02-06; a corresponding API spec update is pending
 
   @qos_booking_createBooking_02_no_device_in_response
   Scenario: Device is not returned if not included in the creation
@@ -294,7 +293,7 @@ Feature: CAMARA QoS Booking API, vwip - Operation createBooking
     And the response property "$.code" is "INVALID_ARGUMENT"
     And the response property "$.message" contains a user friendly text
 
-  @qos_booking_createBooking_400.10_unknown_property_in_request_body
+  @qos_booking_createBooking_400.6_unknown_property_in_request_body
   Scenario: Request body includes an unknown property
     Given the request body includes a property not defined in the OAS schema for CreateBooking
     When the request "createBooking" is sent
@@ -309,7 +308,7 @@ Feature: CAMARA QoS Booking API, vwip - Operation createBooking
 
   # The maximum is considered in the schema so a generic schema validator may fail and generate a 400 INVALID_ARGUMENT without further distinction,
   # and both could be accepted
-  @qos_booking_createBooking_400.6_out_of_range_port
+  @qos_booking_createBooking_400.7_out_of_range_port
   Scenario Outline: Out of range port
     Given the request body property "<port_property>" is set to a value not between between 0 and 65535
     When the request "createBooking" is sent
@@ -381,6 +380,25 @@ Feature: CAMARA QoS Booking API, vwip - Operation createBooking
     And the response property "$.status" is 400
     And the response property "$.code" is "QOS_BOOKING.DURATION_OUT_OF_RANGE"
     And the response property "$.message" contains a user friendly text
+
+  # The credential type is an enum in the schema so a generic schema validator may fail and generate a 400 INVALID_ARGUMENT without further distinction,
+  # and both could be accepted
+  @qos_booking_createBooking_400.12_invalid_credential
+  Scenario Outline: Invalid credential
+    Given the request body includes property "$.sink" with a valid value
+    And the request body property "$.sinkCredential.credentialType" is set to "<unsupported_credential_type>"
+    When the request "createBooking" is sent
+    Then the response status code is 400
+    And the response header "x-correlator" has the same value as the request header "x-correlator"
+    And the response header "Content-Type" is "application/json"
+    And the response property "$.status" is 400
+    And the response property "$.code" is "INVALID_CREDENTIAL" or "INVALID_ARGUMENT"
+    And the response property "$.message" contains a user friendly text
+
+    Examples:
+      | unsupported_credential_type |
+      | PLAIN                       |
+      | REFRESHTOKEN                |
 
   # Response 401
 
@@ -581,6 +599,31 @@ Feature: CAMARA QoS Booking API, vwip - Operation createBooking
     And the response property "$.code" is "QOS_BOOKING.QOS_PROFILE_NOT_APPLICABLE"
     And the response property "$.message" contains a user friendly text
 
+  @qos_booking_createBooking_422.05_event_notifications_not_supported
+  Scenario: Event notifications capability not supported
+    Given the request body includes property "$.sink" with a valid value
+    And the API provider does not implement event notifications delivery for the operation "createBooking"
+    When the request "createBooking" is sent
+    Then the response status code is 422
+    And the response header "x-correlator" has same value as the request header "x-correlator"
+    And the response header "Content-Type" is "application/json"
+    And the response property "$.status" is 422
+    And the response property "$.code" is "EVENT_NOTIFICATIONS_NOT_SUPPORTED"
+    And the response property "$.message" contains a user friendly text
+
+  @qos_booking_createBooking_422.06_private_key_jwt_not_configured
+  Scenario: PRIVATE_KEY_JWT sink credential used without pre-shared configuration
+    Given the request body includes property "$.sink" with a valid value
+    And the request body property "$.sinkCredential.credentialType" is set to "PRIVATE_KEY_JWT"
+    And the PRIVATE_KEY_JWT mechanism is not pre-configured for the API client
+    When the request "createBooking" is sent
+    Then the response status code is 422
+    And the response header "x-correlator" has same value as the request header "x-correlator"
+    And the response header "Content-Type" is "application/json"
+    And the response property "$.status" is 422
+    And the response property "$.code" is "PRIVATE_KEY_JWT_NOT_CONFIGURED"
+    And the response property "$.message" contains a user friendly text
+
 # Response 429
 
 ## Code QUOTA_EXCEEDED
@@ -589,4 +632,14 @@ Feature: CAMARA QoS Booking API, vwip - Operation createBooking
 
 ## Code TOO_MANY_REQUESTS
 
-# No clear test scenario for this code
+  @qos_booking_createBooking_429.01_Too_Many_Requests
+  #To test this scenario environment has to be configured to reject requests reaching the threshold limit set.
+  Scenario: Request is rejected due to threshold policy
+    Given a valid request for "createBooking"
+    And the header "Authorization" is set to a valid access token
+    And the threshold of requests has been reached
+    When the request "createBooking" is sent
+    Then the response status code is 429
+    And the response property "$.status" is 429
+    And the response property "$.code" is "TOO_MANY_REQUESTS"
+    And the response property "$.message" contains a user friendly text
