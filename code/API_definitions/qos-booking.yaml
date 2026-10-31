@@ -935,7 +935,7 @@ components:
       description: Cloud event example for booking status change to TERMINATED due to DURATION_EXPIRED
       value:
         id: "83a0d986-0866-4f38-b8c0-fc65bfcda452"
-        source: "https://api.example.com/qos-booking/v1/device-qos-bookings/123e4567-e89b-12d3-a456-426614174000"
+        source: "https://api.example.com/qos-booking/v0.2/device-qos-bookings/123e4567-e89b-12d3-a456-426614174000"
         type: "org.camaraproject.qos-booking.v0.status-changed"
         specversion: "1.0"
         time: "2024-06-01T13:00:00Z"
