@@ -11,7 +11,7 @@ info:
     # Relevant terms and definitions
 
     * **QoS profiles**:
-    Latency, throughput or priority requirements of the application mapped to relevant QoS profile values. The set of QoS Profiles that a network operator is offering may be retrieved via the `qos-profiles` API (cf. https://github.com/camaraproject/QualityOnDemand/) or will be agreed during the onboarding with the API service provider.
+    Latency, throughput or priority requirements of the application mapped to relevant QoS profile values. The set of QoS Profiles that a network operator is offering may be retrieved via the `qos-profiles` API (cf. https://github.com/camaraproject/QoSProfiles) or will be agreed during the onboarding with the API service provider.
 
     * **Duration**:
     Duration (in seconds) for which the QoS session (between application client and application server) should be booked. Limits for booked QoS session duration can be set by the implementation for the QoS profile. The user may request a termination before its expiration.
@@ -354,7 +354,7 @@ paths:
         required: true
       responses:
         "200":
-          description: Returns the QoS booking information for a given device. A device may have multiple bookings (for several times and locations), thus the response is an array. An empty array is returned if no sessions are found.
+          description: Returns the QoS booking information for a given device. A device may have multiple bookings (for several times and locations), thus the response is an array. An empty array is returned if no bookings are found.
           headers:
             x-correlator:
               $ref: "../common/CAMARA_common.yaml#/components/headers/x-correlator"
@@ -562,7 +562,7 @@ components:
           - A UUID style string
           - Support for predefined profiles QOS_S, QOS_M, QOS_L, and QOS_E
           - A searchable descriptive name
-        The set of QoS Profiles that an operator is offering can be retrieved by means of the [QoS Profile API](link TBC).
+        The set of QoS Profiles that an operator is offering can be retrieved by means of the [QoS Profile API](https://github.com/camaraproject/QoSProfiles).
       type: string
       example: QCI_1_voice
       minLength: 3
@@ -938,7 +938,7 @@ components:
       description: Cloud event example for booking status change to TERMINATED due to DURATION_EXPIRED
       value:
         id: "83a0d986-0866-4f38-b8c0-fc65bfcda452"
-        source: "https://api.example.com/qod/v1/sessions/123e4567-e89b-12d3-a456-426614174000"
+        source: "https://api.example.com/qos-booking/v0.2/device-qos-bookings/123e4567-e89b-12d3-a456-426614174000"
         type: "org.camaraproject.qos-booking.v0.status-changed"
         specversion: "1.0"
         time: "2024-06-01T13:00:00Z"
