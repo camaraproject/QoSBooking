@@ -15,11 +15,15 @@ Sandbox API Repository to describe, develop, document, and test the QoSBooking S
 
 ## Scope
 
-* Service API(s) “QoSBooking” (see APIBacklog.md) 
-* The API(s) provide(s) the API consumer with the ability to:  
-  * book an assignment of a certain QoS Profile to a certain device with some conditions such as start time, duration and location in advance.
-  * update the booking, remove it, and get the information of it.
+* Service API(s) “QoSBooking” (see APIBacklog.md), published as two APIs:
+  * `qos-booking`: books a QoS Profile for a single device in one step.
+  * `qos-booking-and-assignment`: books QoS capacity for multiple devices, then assigns devices to and releases them from the booking as separate steps.
+* The API(s) provide(s) the API consumer with the ability to:
+  * book a certain QoS Profile in advance, with conditions such as start time, duration and location.
+  * get the information of a booking (by identifier or by device), remove it, and optionally be notified of its status changes.
+  * assign devices to, release devices from, and list devices of a booking (`qos-booking-and-assignment` only).
 * Describe, develop, document, and test the API(s)
+
 * Started: January 2025
 <!-- * Incubated since: §incubation date$ --> 
 
