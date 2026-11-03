@@ -163,7 +163,7 @@ Feature: CAMARA QoS Booking API, vwip - Operation deleteBooking
   @qos_booking_deleteBooking_403.2_booking_token_mismatch
   Scenario: QoS booking not created by the API client given in the access token
     # To test this, a token have to be obtained for a different client
-    Given the header "Authorization" is set to a valid access token emitted to a client which did not created the QoS booking
+    Given the header "Authorization" is set to a valid access token emitted to a client which did not create the QoS booking
     When the request "deleteBooking" is sent
     Then the response status code is 403
     And the response header "x-correlator" has same value as the request header "x-correlator"
@@ -193,4 +193,14 @@ Feature: CAMARA QoS Booking API, vwip - Operation deleteBooking
 
   # Code TOO_MANY_REQUESTS
 
-  # No specific test scenarios for these response codes are provided
+  @qos_booking_deleteBooking_429.01_Too_Many_Requests
+  #To test this scenario environment has to be configured to reject requests reaching the threshold limit set.
+  Scenario: Request is rejected due to threshold policy
+    Given a valid request for "deleteBooking"
+    And the header "Authorization" is set to a valid access token
+    And the threshold of requests has been reached
+    When the request "deleteBooking" is sent
+    Then the response status code is 429
+    And the response property "$.status" is 429
+    And the response property "$.code" is "TOO_MANY_REQUESTS"
+    And the response property "$.message" contains a user friendly text
