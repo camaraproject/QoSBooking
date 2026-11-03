@@ -163,7 +163,7 @@ Feature: CAMARA QoS Booking API, vwip - Operation deleteBooking
   @qos_booking_deleteBooking_403.2_booking_token_mismatch
   Scenario: QoS booking not created by the API client given in the access token
     # To test this, a token have to be obtained for a different client
-    Given the header "Authorization" is set to a valid access token emitted to a client which did not created the QoS booking
+    Given the header "Authorization" is set to a valid access token emitted to a client which did not create the QoS booking
     When the request "deleteBooking" is sent
     Then the response status code is 403
     And the response header "x-correlator" has same value as the request header "x-correlator"
