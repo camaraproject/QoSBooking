@@ -572,10 +572,10 @@ Feature: CAMARA QoS Booking API, vwip - Operation createBooking
     And the response property "$.message" contains a user-friendly text
 
     Examples:
-      | area_type | area_type_schema             |
-      | CIRCLE    | #/components/schemas/Circle   |
-      | POLYGON   | #/components/schemas/Polygon  |
-      | AREANAME  | #/components/schemas/AreaName |
+      | area_type |
+      | CIRCLE    |
+      | POLYGON   |
+      | AREANAME  |
 
 ## Code QOS_BOOKING.AREA_NOT_COVERED
 
