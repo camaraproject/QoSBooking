@@ -564,7 +564,7 @@ Feature: CAMARA QoS Booking API, vwip - Operation createBooking
   @qos_booking_createBooking_422.02_invalid_area
   Scenario Outline: Invalid area
     Given the request body property "$.serviceArea.areaType" is set to "<area_type>"
-    And the request body property "$.serviceArea" is not compliant with the schema "<area_type_schema>"
+    And the request body property "$.serviceArea" is a schema-compliant "<area_type>" area which the operator cannot accept
     When the request "createBooking" is sent
     Then the response status code is 422
     And the response property "$.status" is 422
