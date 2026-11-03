@@ -651,7 +651,7 @@ paths:
         "202":
           description: |
             The release request is accepted but is pending for internal reasons, or the release process has started and is currently in progress.
-            Once all devices are released, provided a `sink` was provided at booking creation, a notification will be sent with the appropriate success or failure confirmation
+            Once all devices are released, provided a `sink` was registered at booking creation, a notification will be sent with the appropriate success or failure confirmation
           headers:
             x-correlator:
               $ref: "#/components/headers/x-correlator"
