@@ -16,7 +16,7 @@ Feature: CAMARA QoS Booking and Assignment API, vwip - Operation deleteBooking
   # * An https endpoint able to receive CloudEvents, with a valid access token to be used as sinkCredential (credentialType ACCESSTOKEN).
   # * An access token emitted to a different API client than the one that created the QoS booking.
   #
-  # References to OAS spec schemas refer to schemas specified in qos-booking-and-assignment-wip-alignedto_r4dot4.yaml
+  # References to OAS spec schemas refer to schemas specified in qos-booking-and-assignment.yaml
 
   Background: Common "deleteBooking" setup
     Given an environment at "apiRoot"
@@ -48,7 +48,7 @@ Feature: CAMARA QoS Booking and Assignment API, vwip - Operation deleteBooking
     And the response header "x-correlator" has same value as the request header "x-correlator"
     And the response body complies with the OAS schema at "#/components/schemas/BookingOutput"
     And the response property "$.bookingId" has the same value as the path parameter "bookingId"
-    And the response property "$.bookingStatus" is "REQUESTED"
+    And the response property "$.bookingStatus" has the same value as before the deletion request ("REQUESTED", "SCHEDULED" or "ACTIVATED")
     And the response property "$.statusInfo" is "DELETE_REQUESTED"
 
   # CONDITIONAL: applicable if the API provider processes the deletion synchronously. For asynchronous processing the check applies once the cancellation event has been received
@@ -63,10 +63,11 @@ Feature: CAMARA QoS Booking and Assignment API, vwip - Operation deleteBooking
     And the response property "$.code" is "NOT_FOUND"
     And the response property "$.message" contains a user friendly text
 
+  # CONDITIONAL: only applicable if the API provider processes the deletion asynchronously. No event is sent for a synchronous deletion (204)
   @qos_booking_and_assignment_deleteBooking_04_event_notification
   Scenario: Cancellation event is received after using sink
     Given a QoS booking has been created successfully with operation "createBooking" and includes a valid sink and sinkCredentials
-    And its deletion has been requested successfully with operation "deleteBooking"
+    And its deletion has been accepted for asynchronous processing (status code 202) with operation "deleteBooking"
     When the booking cancellation is completed
     Then an event is received at the address of the request property "$.sink"
     And the event header "Authorization" is set to "Bearer " + the value of the request property "$.sinkCredential.accessToken"
@@ -75,8 +76,8 @@ Feature: CAMARA QoS Booking and Assignment API, vwip - Operation deleteBooking
     And the event body property "$.id" is unique
     And the event body property "$.type" is set to "org.camaraproject.qos-booking-and-assignment.v0.booking-status-changed"
     And the event body property "$.data.bookingDetails.bookingId" has the same value as createBooking response property "$.bookingId"
-    And the event body property "$.data.bookingStatus" is "TERMINATED"
-    And the event body property "$.data.statusInfo" is "BOOKING_CANCELLED"
+    And the event body property "$.data.bookingDetails.bookingStatus" is "TERMINATED"
+    And the event body property "$.data.bookingDetails.statusInfo" is "BOOKING_CANCELLED"
 
 ############################ Error Scenarios #############################################
 
