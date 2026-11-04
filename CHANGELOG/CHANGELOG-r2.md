@@ -77,7 +77,11 @@ Changes documented below are compared to version 0.2.0-rc.1.
 
 ### Breaking changes
 
-* N/A
+* Fix r2.2 review issues by @gmuratk in https://github.com/camaraproject/QoSBooking/pull/183:
+  * status and statusInfo duplicated in notification data in [#130](https://github.com/camaraproject/QoSBooking/issues/130): data.bookingStatus, data.assignmentStatus and data.statusInfo are removed from notifications.
+  * Review need for independent device assignment callbacks in [#132](https://github.com/camaraproject/QoSBooking/issues/132): DeviceAssignmentInput has additionalProperties: false (line 876), so clients that still send sink or sinkCredential to assignDevices/releaseDevices now get 400 INVALID_ARGUMENT.
+  * createBooking returns 201 for a synchronous rejection without a resource in [#170](https://github.com/camaraproject/QoSBooking/issues/170): a synchronous rejection at createBooking now creates a booking resource and returns a bookingId.
+  * Status vocabulary: duplicate and misplaced statusInfo values, two meanings of RELEASED in [#171](https://github.com/camaraproject/QoSBooking/issues/171): the BOOKING_EXPIRED value is removed in favour of DURATION_EXPIRED.
 
 ### Added
 
@@ -89,7 +93,11 @@ Changes documented below are compared to version 0.2.0-rc.1.
 
 ### Fixed
 
-* N/A
+* Comprehensive Pull Request for Issues Identified during Release Review by @gmuratk in https://github.com/camaraproject/QoSBooking/pull/139
+* Align QoS B&A with Commonalities r4.4 by @gmuratk in https://github.com/camaraproject/QoSBooking/pull/155
+* fix warnings reported against snapshot r2.2 by @gmuratk in https://github.com/camaraproject/QoSBooking/pull/157
+* Fix scenario title for assignedDevices by @gmuratk in https://github.com/camaraproject/QoSBooking/pull/159
+* Fix r2.2 review issues by @gmuratk in https://github.com/camaraproject/QoSBooking/pull/183
 
 ### Removed
 
@@ -112,15 +120,24 @@ Changes documented below are compared to version 0.2.0-rc.1.
 
 ### Added
 
-* N/A
+* Declare 422 PRIVATE_KEY_JWT_NOT_CONFIGURED for createBooking by @Masa8106 in https://github.com/camaraproject/QoSBooking/pull/179
+* Notification callback lacks the mandatory 429 response by @Masa8106 in https://github.com/camaraproject/QoSBooking/pull/178
+* Test definitions: missing error scenarios, duplicate tag, stale serviceArea note by @Masa8106 in https://github.com/camaraproject/QoSBooking/pull/180
 
 ### Changed
 
-* N/A
+* Add default assumption for ApplicationServer and its Port by @Masa8106 in https://github.com/camaraproject/QoSBooking/pull/146
 
 ### Fixed
 
-* N/A
+* Update ApplicationServerIpAddress pattern by @Masa8106 in https://github.com/camaraproject/QoSBooking/pull/143
+* Endpoints that do not accept explicit device identifier include it as an optional response parameter by @Masa8106 in https://github.com/camaraproject/QoSBooking/pull/144
+* Update documentation by @Masa8106 in https://github.com/camaraproject/QoSBooking/pull/147
+* Add explicit examples for schema that use discriminators by @Masa8106 in https://github.com/camaraproject/QoSBooking/pull/148
+* Improve Error Handling Description by @Masa8106 in https://github.com/camaraproject/QoSBooking/pull/145
+* Align QoS B with Commonalities r4.4 by @Masa8106 in https://github.com/camaraproject/QoSBooking/pull/154
+* Placeholder link, QoS Profiles reference, wording and example source URL by @Masa8106 in https://github.com/camaraproject/QoSBooking/pull/181
+* Unused Examples variable by @Masa8106 in https://github.com/camaraproject/QoSBooking/pull/186
 
 ### Removed
 
