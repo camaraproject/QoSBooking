@@ -121,8 +121,8 @@ Changes documented below are compared to version 0.2.0-rc.1.
 ### Added
 
 * Declare 422 PRIVATE_KEY_JWT_NOT_CONFIGURED for createBooking by @Masa8106 in https://github.com/camaraproject/QoSBooking/pull/179
-* Notification callback lacks the mandatory 429 response by @Masa8106 in https://github.com/camaraproject/QoSBooking/pull/178
-* Test definitions: missing error scenarios, duplicate tag, stale serviceArea note by @Masa8106 in https://github.com/camaraproject/QoSBooking/pull/180
+* Add the mandatory 429 response for notification callback by @Masa8106 in https://github.com/camaraproject/QoSBooking/pull/178
+* Update test definitions: add missing error scenarios by @Masa8106 in https://github.com/camaraproject/QoSBooking/pull/180
 
 ### Changed
 
@@ -131,13 +131,12 @@ Changes documented below are compared to version 0.2.0-rc.1.
 ### Fixed
 
 * Update ApplicationServerIpAddress pattern by @Masa8106 in https://github.com/camaraproject/QoSBooking/pull/143
-* Endpoints that do not accept explicit device identifier include it as an optional response parameter by @Masa8106 in https://github.com/camaraproject/QoSBooking/pull/144
-* Update documentation by @Masa8106 in https://github.com/camaraproject/QoSBooking/pull/147
+* Clarify Endpoint that accepts explicit device identifier as an optional response parameter by @Masa8106 in https://github.com/camaraproject/QoSBooking/pull/144
+* Update to clarify a lifecycle of booking by @Masa8106 in https://github.com/camaraproject/QoSBooking/pull/147
 * Add explicit examples for schema that use discriminators by @Masa8106 in https://github.com/camaraproject/QoSBooking/pull/148
 * Improve Error Handling Description by @Masa8106 in https://github.com/camaraproject/QoSBooking/pull/145
 * Align QoS B with Commonalities r4.4 by @Masa8106 in https://github.com/camaraproject/QoSBooking/pull/154
-* Placeholder link, QoS Profiles reference, wording and example source URL by @Masa8106 in https://github.com/camaraproject/QoSBooking/pull/181
-* Unused Examples variable by @Masa8106 in https://github.com/camaraproject/QoSBooking/pull/186
+* Update placeholder link, QoS Profiles reference, wording and example source URL by @Masa8106 in https://github.com/camaraproject/QoSBooking/pull/181
 
 ### Removed
 
