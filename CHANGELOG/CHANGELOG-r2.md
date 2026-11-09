@@ -2,6 +2,7 @@
 
 <!-- TOC:START -->
 ## Table of Contents
+- [r2.2](#r22)
 - [r2.1](#r21)
 <!-- TOC:END -->
 
@@ -13,6 +14,149 @@ The below sections record the changes for each API version in each release as fo
 * for the first release-candidate, all changes since the last public release
 * for subsequent release-candidate(s), only the delta to the previous release-candidate
 * for a public release, the consolidated changes since the previous public release
+
+# r2.2
+
+## Release Notes
+
+This release candidate contains the definition and documentation of
+* qos-booking-and-assignment 0.2.0-rc.2
+* qos-booking 0.2.0-rc.2
+
+The API definition(s) are based on
+* Commonalities r4.4 (0.9.0)
+* Identity and Consent Management r4.2 (0.5.0)
+
+## qos-booking-and-assignment 0.2.0-rc.2
+
+**qos-booking-and-assignment 0.2.0-rc.2 is a release-candidate version of this API.**
+
+Changes documented below are compared to version 0.2.0-rc.1.
+
+- API definition **with inline documentation**:
+  - [View it on ReDoc](https://redocly.github.io/redoc/?url=https://raw.githubusercontent.com/camaraproject/QoSBooking/r2.2/code/API_definitions/qos-booking-and-assignment.yaml&nocors)
+  - [View it on Swagger Editor](https://camaraproject.github.io/swagger-ui/?url=https://raw.githubusercontent.com/camaraproject/QoSBooking/r2.2/code/API_definitions/qos-booking-and-assignment.yaml)
+  - OpenAPI [YAML spec file](https://github.com/camaraproject/QoSBooking/blob/r2.2/code/API_definitions/qos-booking-and-assignment.yaml)
+
+### Breaking changes
+
+* [PR #139](https://github.com/camaraproject/QoSBooking/pull/139) by @gmuratk
+  * Booking responses: property `status` replaced by the required property `bookingStatus` with the values `REQUESTED`, `SCHEDULED`, `ACTIVATED` and `TERMINATED`. The reason is carried in `statusInfo`
+  * Assignment responses and events: property `status` replaced by `assignmentStatus`. The value `PENDING` is renamed `REQUESTED`, `SUCCESSFUL` is renamed `ASSIGNED`, and `RELEASED` is added for completed releases
+  * `statusInfo` is now a free-form string (maximum 256 characters) instead of a closed enumeration. Terminal booking reasons are reported with `bookingStatus: TERMINATED`
+  * CloudEvent type `org.camaraproject.qos-booking-and-assignment.v0.status-changed` renamed to `org.camaraproject.qos-booking-and-assignment.v0.booking-status-changed`
+  * `numDevices` (request) and `totalDevices` (responses) renamed to `bookingDeviceCount`
+  * `createBooking`: HTTP `202` removed. Every outcome (`REQUESTED`, `SCHEDULED`, `ACTIVATED`, `TERMINATED`) returns `201` with a `bookingId`
+  * `deleteBooking`: HTTP `200` with a response body replaced by `204 No Content` for synchronous success
+* [PR #183](https://github.com/camaraproject/QoSBooking/pull/183) by @gmuratk
+  * `statusInfo` value `BOOKING_EXPIRED` replaced by `DURATION_EXPIRED` in booking and assignment responses; `BOOKING_ACCEPTED` is deprecated in favour of `BOOKING_SCHEDULED`
+  * Notifications no longer carry the top-level `data.status` and `data.statusInfo`. The new status and its reason are read from `data.bookingDetails.bookingStatus` / `data.bookingDetails.statusInfo` (booking events) and `data.deviceDetails.assignmentStatus` / `data.deviceDetails.statusInfo` (assignment events)
+  * `createBooking`: a booking rejected synchronously is now created in state `TERMINATED` and a `bookingId` is returned
+  * `deleteBooking`: the `202` response now keeps the current `bookingStatus` with `statusInfo: DELETE_REQUESTED`
+  * `assignDevices` and `releaseDevices`: `sink` and `sinkCredential` removed from the request and the per-operation callback removed. All notifications are sent to the `sink` registered at `createBooking`; requests that still send these properties now fail with `400 INVALID_ARGUMENT`
+
+### Added
+
+* [PR #139](https://github.com/camaraproject/QoSBooking/pull/139) by @gmuratk
+  * New required response property `bookingStatus` (`REQUESTED`, `SCHEDULED`, `ACTIVATED`, `TERMINATED`) on bookings, and `assignmentStatus` (`REQUESTED`, `ASSIGNED`, `PARTIAL_SUCCESS`, `RELEASED`, `FAILURE`) on device assignments; `bookingStatus` is also an optional property of the embedded booking details
+  * `statusInfo` value `DEVICE_RELEASED` for completed device releases, and `BOOKING_SCHEDULED` as the reason for a confirmed booking
+  * API description: new sections "Booking and assignment lifecycle" (state diagrams, transition tables and notification mapping), "API-specific error behaviour" (400, 409 and 422 codes per operation) and "Three-legged access token restrictions"
+* [PR #155](https://github.com/camaraproject/QoSBooking/pull/155) by @gmuratk
+  * Error `422 EVENT_NOTIFICATIONS_NOT_SUPPORTED` on `createBooking`, returned when a `sink` is provided but the API provider does not support event notifications. No booking is created
+  * Error `422 QOS_BOOKING_AND_ASSIGNMENT.DEVICE_QUOTA_EXCEEDED` on `assignDevices`, returned when the request exceeds the remaining device capacity of the booking
+  * `sink` is returned in the `BookingOutput` when event delivery is accepted by the API provider
+  * Test definitions: one feature file per operation aligned to Commonalities r4.4, covering every documented status and error code
+* [PR #183](https://github.com/camaraproject/QoSBooking/pull/183) by @gmuratk
+  * Error `422 PRIVATE_KEY_JWT_NOT_CONFIGURED` on `createBooking`, returned when `sinkCredential.credentialType` is `PRIVATE_KEY_JWT` and no JWK Set is configured for the API consumer
+
+### Changed
+
+* [PR #139](https://github.com/camaraproject/QoSBooking/pull/139) by @gmuratk
+  * `deleteBooking` description now documents the provider-specific behaviour when devices are still assigned (`409 INCOMPATIBLE_STATE` or automatic release)
+  * Examples updated to the new status fields and values (`bookingStatus`, `assignmentStatus`, `bookingDeviceCount`); the `BOOKING_PENDING` example now includes a `bookingId`
+  * Version-specific wording ("v0.1") removed from the API description
+* [PR #155](https://github.com/camaraproject/QoSBooking/pull/155) by @gmuratk
+  * Alignment with Commonalities r4.4 (`x-camara-commonalities` updated from 0.8.0 to 0.9.0). Error responses use the common response catalogue and `sink` uses the common `Sink` schema
+  * Error responses with codes not covered by the common catalogue are defined per operation and list only the codes that operation can return. `createBooking` 409 now documents `ALREADY_EXISTS` only
+  * `getBookingById`, `deleteBooking`, `getDevicesByBookingId` and `retrieveBookingByDevice` document only `INVALID_ARGUMENT` for 400
+* [PR #157](https://github.com/camaraproject/QoSBooking/pull/157) by @gmuratk
+  * The `identifying-device-from-access-token` section of the API description now follows the canonical Commonalities template; the API-specific three-legged token guidance is kept in its own section
+  * `statusInfo` values for bookings are restricted to the pattern `^[A-Z][A-Z0-9_]*$`
+* [PR #183](https://github.com/camaraproject/QoSBooking/pull/183) by @gmuratk
+  * `assignDevices` and `releaseDevices` use the common `BadRequestWithRange400` (including `OUT_OF_RANGE`) and `DeviceIdentifier422` responses
+  * A `TERMINATED` booking stays readable for at least 360 s unless deleted; invalid operations on it return `409 INCOMPATIBLE_STATE`, and after deletion its `bookingId` returns `404`
+  * `RELEASED` and `DEVICE_RELEASED` now mean that all requested devices were released
+  * `deleteBooking` description now documents that the cancellation event is sent only for asynchronous (`202`) deletions
+  * Normative wording in the API description changed to MUST / MUST NOT; `Devices` array MUST NOT be provided with a three-legged token
+
+### Fixed
+
+* [PR #139](https://github.com/camaraproject/QoSBooking/pull/139) by @gmuratk
+  * Example `ASSIGNMENT_RELEASED` now returns `assignmentStatus: RELEASED` and `statusInfo: DEVICE_RELEASED` instead of `SUCCESSFUL`
+  * Example `BOOKING_FAILURE` is now referenced in the `createBooking` 201 response, resolving the unused-component warning
+  * Formatting of the CAMARA mandatory sections in `info.description` corrected, and the reference to the deprecated "API Readiness Checklist" replaced by the `x-camara-commonalities` field
+* [PR #157](https://github.com/camaraproject/QoSBooking/pull/157) by @gmuratk
+  * Test scenarios that follow up on a previous operation (`createBooking` then `getBookingById`, `deleteBooking` then read, `assignDevices` and `releaseDevices` then `getDevicesByBookingId`) restructured so each has a single When/Then
+* [PR #159](https://github.com/camaraproject/QoSBooking/pull/159) by @gmuratk
+  * Indentation in the `assignDevices` test definition (feature file) corrected
+* [PR #183](https://github.com/camaraproject/QoSBooking/pull/183) by @gmuratk
+  * Examples (`networkAccessIdentifier` removed), typos, QoSProfiles links, test definition specification references and README scope corrected
+  * `409 INCOMPATIBLE_STATE` responses use a local example with a message fitting this API
+
+### Removed
+
+* [PR #139](https://github.com/camaraproject/QoSBooking/pull/139) by @gmuratk
+  * `createBooking` response `202` and `deleteBooking` response `200` with body
+  * Error `404` from `createBooking` (no path parameter), `404` and `409` from `retrieveBookingByDevice` (an empty array is returned when nothing matches), and `422` from `getDevicesByBookingId` (no device in the request)
+* [PR #155](https://github.com/camaraproject/QoSBooking/pull/155) by @gmuratk
+  * Deprecated error code `CONFLICT` from all 409 responses, `INCOMPATIBLE_STATE` from `createBooking` 409, and the device identifier 422 codes from `createBooking`
+* [PR #157](https://github.com/camaraproject/QoSBooking/pull/157) by @gmuratk
+  * Example `BOOKING_CANCELLED` (the `deleteBooking` 200 response example). The cancellation outcome is now only observable via the `booking-status-changed` notification or a subsequent `GET`
+* [PR #183](https://github.com/camaraproject/QoSBooking/pull/183) by @gmuratk
+  * `sink`, `sinkCredential` and the notification callback from `assignDevices` and `releaseDevices`
+  * Top-level `status` and `statusInfo` in notification `data`
+  * `statusInfo` value `BOOKING_EXPIRED` (replaced by `DURATION_EXPIRED`)
+  * Failure examples from the `assignDevices` 201 response; the partial-success example now uses `DEVICE_NOT_FOUND`
+## qos-booking 0.2.0-rc.2
+
+**qos-booking 0.2.0-rc.2 is a release-candidate version of this API.**
+
+Changes documented below are compared to version 0.2.0-rc.1.
+
+- API definition **with inline documentation**:
+  - [View it on ReDoc](https://redocly.github.io/redoc/?url=https://raw.githubusercontent.com/camaraproject/QoSBooking/r2.2/code/API_definitions/qos-booking.yaml&nocors)
+  - [View it on Swagger Editor](https://camaraproject.github.io/swagger-ui/?url=https://raw.githubusercontent.com/camaraproject/QoSBooking/r2.2/code/API_definitions/qos-booking.yaml)
+  - OpenAPI [YAML spec file](https://github.com/camaraproject/QoSBooking/blob/r2.2/code/API_definitions/qos-booking.yaml)
+
+### Breaking changes
+
+* N/A
+
+### Added
+
+* Declare 422 PRIVATE_KEY_JWT_NOT_CONFIGURED for createBooking by @Masa8106 in https://github.com/camaraproject/QoSBooking/pull/179
+* Add the mandatory 429 response for notification callback by @Masa8106 in https://github.com/camaraproject/QoSBooking/pull/178
+* Update test definitions: add missing error scenarios by @Masa8106 in https://github.com/camaraproject/QoSBooking/pull/180
+
+### Changed
+
+* Add default assumption for ApplicationServer and its Port by @Masa8106 in https://github.com/camaraproject/QoSBooking/pull/146
+
+### Fixed
+
+* Update ApplicationServerIpAddress pattern by @Masa8106 in https://github.com/camaraproject/QoSBooking/pull/143
+* Clarify Endpoint that accepts explicit device identifier as an optional response parameter by @Masa8106 in https://github.com/camaraproject/QoSBooking/pull/144
+* Update to clarify a lifecycle of booking by @Masa8106 in https://github.com/camaraproject/QoSBooking/pull/147
+* Add explicit examples for schema that use discriminators by @Masa8106 in https://github.com/camaraproject/QoSBooking/pull/148
+* Improve Error Handling Description by @Masa8106 in https://github.com/camaraproject/QoSBooking/pull/145
+* Align QoS B with Commonalities r4.4 by @Masa8106 in https://github.com/camaraproject/QoSBooking/pull/154
+* Update placeholder link, QoS Profiles reference, wording and example source URL by @Masa8106 in https://github.com/camaraproject/QoSBooking/pull/181
+
+### Removed
+
+* N/A
+
+**Full Changelog**: https://github.com/camaraproject/QoSBooking/compare/r2.1...r2.2
 
 # r2.1
 
