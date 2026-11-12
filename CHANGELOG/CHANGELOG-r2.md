@@ -142,19 +142,38 @@ Changes documented below are compared to version 0.1.0.
 
 ### Breaking changes
 
-* N/A
+* Response property `status` renamed to `bookingStatus` by @Masa8106 in https://github.com/camaraproject/QoSBooking/pull/88
+* Status `AVAILABLE` renamed `ACTIVATED` by @Masa8106 in https://github.com/camaraproject/QoSBooking/pull/88
+* Status `UNAVAILABLE` renamed `TERMINATED` by @Masa8106 in https://github.com/camaraproject/QoSBooking/pull/88
+* `StatusInfo` renamed `BookingStatusInfo` and it includes additionally `BOOKING_DELCINED` and `BOOKING_REVOKED` by @Masa8106 in https://github.com/camaraproject/QoSBooking/pull/88
 
 ### Added
 
-* N/A
+* Aligned with CAMARA Commonalities r4.4 (0.9.0) by @Masa8106 in https://github.com/camaraproject/QoSBooking/pull/97, https://github.com/camaraproject/QoSBooking/pull/98, https://github.com/camaraproject/QoSBooking/pull/117, https://github.com/camaraproject/QoSBooking/pull/143, https://github.com/camaraproject/QoSBooking/pull/154, https://github.com/camaraproject/QoSBooking/pull/178 and https://github.com/camaraproject/QoSBooking/pull/179
+  - Request inputs carry explicit length and range limits
+  - Port numbers must be at least 1
+  - `duration` are bounded only by the 32-bit integer range; the effective limit is the `maxDuration` of the QoS Profile
+  - QoSBooking status change notifications follow the common CloudEvents model
+  - `ApplicationServerIpAddress` pattern was updated
+  - 429 response for notification callback was added
+  - `422 PRIVATE_KEY_JWT_NOT_CONFIGURED` was declared for `createBooking`
+* Aligned the test definitions with the Commonalities r4.4 test template by @jlurien in https://github.com/camaraproject/QoSBooking/pull/70, @Masa8106 in https://github.com/camaraproject/QoSBooking/pull/180
+  - Splitting test files per operation
+  - Adding missing error scenarios
+* Error code `QOS_BOOKING.QOS_PROFILE_NOT_APPLICABLE` was newly added by @Masa8106 in https://github.com/camaraproject/QoSBooking/pull/104
 
 ### Changed
 
-* N/A
+* Lifecycle of booking status was changed and clarified by @Masa8106 in https://github.com/camaraproject/QoSBooking/pull/88 and https://github.com/camaraproject/QoSBooking/pull/147  (see Breaking changes)
+* Default assumption for `ApplicationServer` and its `Port` was specified by @Masa8106 in https://github.com/camaraproject/QoSBooking/pull/146
 
 ### Fixed
 
-* N/A
+* Schema `AreaType` was renamed `QosBookingAreaType` by @Masa8106 in https://github.com/camaraproject/QoSBooking/pull/115
+* Clarified endpoint that accepts explicit device identifier as an optional response parameter by @Masa8106 in https://github.com/camaraproject/QoSBooking/pull/144
+* Improve Error Handling Description by @Masa8106 in https://github.com/camaraproject/QoSBooking/pull/145
+* Explicit examples for schema that use discriminators was added by @Masa8106 in https://github.com/camaraproject/QoSBooking/pull/148
+* Editorial corrections: Update placeholder link, QoS Profiles reference, wording and example source URL by @Masa8106 in https://github.com/camaraproject/QoSBooking/pull/181
 
 ### Removed
 
