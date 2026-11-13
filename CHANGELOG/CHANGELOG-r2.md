@@ -254,7 +254,11 @@ Changes documented below are compared to version 0.1.0.
 
 ### Removed
 
-* N/A
+* `sinkCredential.credentialType` values `PLAIN` and `REFRESHTOKEN`; 0.1.0 already required `ACCESSTOKEN` by @Masa8106 in https://github.com/camaraproject/QoSBooking/pull/97, @jlurien in https://github.com/camaraproject/QoSBooking/pull/105
+* Error codes that do not apply by @jlurien in https://github.com/camaraproject/QoSBooking/pull/105, @Masa8106 in https://github.com/camaraproject/QoSBooking/pull/145 and https://github.com/camaraproject/QoSBooking/pull/154
+  - `OUT_OF_RANGE` from the `400` of `getBookingById`, `deleteBooking` and `retrieveBookingByDevice`
+  - `NOT_FOUND` from the `404` of `createBooking` and `retrieveBookingByDevice`
+  - The deprecated `QUOTA_EXCEEDED` from all `429` responses
 
 **Full Changelog**: https://github.com/camaraproject/QoSBooking/compare/r1.2...r2.3
 
