@@ -181,7 +181,6 @@ Changes documented below are compared to version 0.1.0.
 * `deleteBooking` description documents the provider-specific behavior when devices are still assigned and the delivery of the cancellation event for asynchronous deletions by @gmuratk in https://github.com/camaraproject/QoSBooking/pull/139 and https://github.com/camaraproject/QoSBooking/pull/183
 * `RELEASED` and `DEVICE_RELEASED` mean that all requested devices were released; normative wording in the API description changed to MUST / MUST NOT by @gmuratk in https://github.com/camaraproject/QoSBooking/pull/183
 * Version-specific wording ("v0.1") removed from the API description by @gmuratk in https://github.com/camaraproject/QoSBooking/pull/139
-* Maximum of `duration` set to the 32-bit integer range (2147483647); the effective limit is the maximum duration of the QoS Profile by @Masa8106 in https://github.com/camaraproject/QoSBooking/pull/117
 
 ### Fixed
 
