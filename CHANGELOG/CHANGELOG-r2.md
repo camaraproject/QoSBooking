@@ -247,7 +247,6 @@ Changes documented below are compared to version 0.1.0.
 
 ### Fixed
 
-* Schema `AreaType` was renamed `QosBookingAreaType` by @Masa8106 in https://github.com/camaraproject/QoSBooking/pull/115
 * Clarified endpoint that accepts explicit device identifier as an optional response parameter by @Masa8106 in https://github.com/camaraproject/QoSBooking/pull/144
 * Improve Error Handling Description by @Masa8106 in https://github.com/camaraproject/QoSBooking/pull/145
 * Explicit examples for schema that use discriminators was added by @Masa8106 in https://github.com/camaraproject/QoSBooking/pull/148
