@@ -230,7 +230,10 @@ Changes documented below are compared to version 0.1.0.
   - QoSBooking status change notifications follow the common CloudEvents model
   - `ApplicationServerIpAddress` pattern was updated
   - 429 response for notification callback was added
-  - `422 PRIVATE_KEY_JWT_NOT_CONFIGURED` was declared for `createBooking`
+  - `422 PRIVATE_KEY_JWT_NOT_CONFIGURED` was added for `createBooking`
+  - `sinkCredential.credentialType` value `PRIVATE_KEY_JWT` was added
+  - `422 EVENT_NOTIFICATIONS_NOT_SUPPORTED` was added for `createBooking`, returned when a `sink` is provided but the API provider does not support event notifications
+  - Requests with properties not declared in the specification are rejected with `400 INVALID_ARGUMENT` (request body strictness)
 * Aligned the test definitions with the Commonalities r4.4 test template by @jlurien in https://github.com/camaraproject/QoSBooking/pull/70, @Masa8106 in https://github.com/camaraproject/QoSBooking/pull/180
   - Splitting test files per operation
   - Adding missing error scenarios
