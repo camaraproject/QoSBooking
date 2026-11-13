@@ -115,7 +115,8 @@ Changes documented below are compared to version 0.1.0.
   - `Status` and `StatusChanged` enums removed
   - New `BookingStatus` (`REQUESTED`, `SCHEDULED`, `ACTIVATED`, `TERMINATED`); response property `status` of `BookingOutput` renamed to the required property `bookingStatus`; optional `bookingStatus` added to `BookingDetails`
   - New `AssignmentStatus` (`REQUESTED`, `ASSIGNED`, `PARTIAL_SUCCESS`, `RELEASED`, `FAILURE`); response property `status` of `DeviceAssignmentOutput` renamed to the required property `assignmentStatus`
-  - `PENDING` renamed `REQUESTED`; `SUCCESSFUL` renamed `ASSIGNED` for assignments (`SCHEDULED` or `ACTIVATED` for bookings); `RELEASED` added for completed releases
+  - `PENDING` renamed `REQUESTED`; `SUCCESSFUL` renamed `ASSIGNED` for assignments (`SCHEDULED` or `ACTIVATED` for bookings); `FAILURE` replaced by `TERMINATED` for bookings; `RELEASED` added for completed releases
+  - A booking rejected synchronously is returned with `201`, `bookingStatus: TERMINATED` and a `bookingId`
 * `BookingStatusInfo` and `AssignmentStatusInfo` changed from closed enumerations to free-form strings (maximum 256 characters) by @gmuratk in https://github.com/camaraproject/QoSBooking/pull/139, https://github.com/camaraproject/QoSBooking/pull/157 and https://github.com/camaraproject/QoSBooking/pull/183
   - Terminal booking reasons are reported with `bookingStatus: TERMINATED`
   - `BOOKING_EXPIRED` replaced by `DURATION_EXPIRED`; `BOOKING_ACCEPTED` deprecated in favour of `BOOKING_SCHEDULED`
