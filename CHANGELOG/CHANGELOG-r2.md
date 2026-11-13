@@ -196,7 +196,7 @@ Changes documented below are compared to version 0.1.0.
 * `deleteBooking` response `200` with body and its `BOOKING_CANCELLED` example by @gmuratk in https://github.com/camaraproject/QoSBooking/pull/139 and https://github.com/camaraproject/QoSBooking/pull/157
 * `sink`, `sinkCredential` and the notification callback from `assignDevices` and `releaseDevices` by @gmuratk in https://github.com/camaraproject/QoSBooking/pull/183
 * Top-level `status` and `statusInfo` in notification `data`; `statusInfo` value `BOOKING_EXPIRED` by @gmuratk in https://github.com/camaraproject/QoSBooking/pull/183
-* Generic 409 error code `CONFLICT` by @RamTMO in https://github.com/camaraproject/QoSBooking/pull/81 and @gmuratk in https://github.com/camaraproject/QoSBooking/pull/155; `INCOMPATIBLE_STATE` from `createBooking` 409 and the device identifier 422 codes from `createBooking` by @gmuratk in https://github.com/camaraproject/QoSBooking/pull/155
+* Generic 409 error code `CONFLICT` by @RamTMO in https://github.com/camaraproject/QoSBooking/pull/81 and @gmuratk in https://github.com/camaraproject/QoSBooking/pull/155; the device identifier 422 codes from `createBooking` by @gmuratk in https://github.com/camaraproject/QoSBooking/pull/155
 * `sinkCredential` types `PLAIN` and `REFRESHTOKEN` by @gmuratk in https://github.com/camaraproject/QoSBooking/pull/101
 
 ## qos-booking 0.2.0
