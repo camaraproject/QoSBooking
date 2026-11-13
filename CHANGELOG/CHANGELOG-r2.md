@@ -192,7 +192,7 @@ Changes documented below are compared to version 0.1.0.
 
 ### Removed
 
-* `Status`, `StatusChanged`, `BookingStatusChanged` and `AssignmentStatusChanged` enums by @gmuratk in https://github.com/camaraproject/QoSBooking/pull/139 and https://github.com/camaraproject/QoSBooking/pull/183
+* `Status` and `StatusChanged` enums by @gmuratk in https://github.com/camaraproject/QoSBooking/pull/139
 * `createBooking` response `202`, `deleteBooking` response `200` with body and the `BOOKING_CANCELLED` example by @gmuratk in https://github.com/camaraproject/QoSBooking/pull/139 and https://github.com/camaraproject/QoSBooking/pull/157
 * `sink`, `sinkCredential` and the notification callback from `assignDevices` and `releaseDevices` by @gmuratk in https://github.com/camaraproject/QoSBooking/pull/183
 * Top-level `status` and `statusInfo` in notification `data`; `statusInfo` value `BOOKING_EXPIRED` by @gmuratk in https://github.com/camaraproject/QoSBooking/pull/183
