@@ -215,7 +215,7 @@ Changes documented below are compared to version 0.1.0.
 
 ### Breaking changes
 
-* Response property `status` renamed to `bookingStatus` by @Masa8106 in https://github.com/camaraproject/QoSBooking/pull/88
+* Property `status` renamed to `bookingStatus` in responses and in the `data` of the `status-changed` notification by @Masa8106 in https://github.com/camaraproject/QoSBooking/pull/88
 * Status `AVAILABLE` renamed `ACTIVATED` by @Masa8106 in https://github.com/camaraproject/QoSBooking/pull/88
 * Status `UNAVAILABLE` renamed `TERMINATED` by @Masa8106 in https://github.com/camaraproject/QoSBooking/pull/88
 * `StatusInfo` renamed `BookingStatusInfo` and it includes additionally `BOOKING_DELCINED` and `BOOKING_REVOKED` by @Masa8106 in https://github.com/camaraproject/QoSBooking/pull/88
