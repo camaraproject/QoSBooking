@@ -223,7 +223,7 @@ Changes documented below are compared to version 0.1.0.
 
 ### Added
 
-* Aligned with CAMARA Commonalities r4.4 (0.9.0) by @Masa8106 in https://github.com/camaraproject/QoSBooking/pull/97, https://github.com/camaraproject/QoSBooking/pull/98, https://github.com/camaraproject/QoSBooking/pull/117, https://github.com/camaraproject/QoSBooking/pull/143, https://github.com/camaraproject/QoSBooking/pull/154, https://github.com/camaraproject/QoSBooking/pull/178 and https://github.com/camaraproject/QoSBooking/pull/179
+* Aligned with CAMARA Commonalities r4.4 (0.9.0) by @Masa8106 in https://github.com/camaraproject/QoSBooking/pull/97, https://github.com/camaraproject/QoSBooking/pull/98, https://github.com/camaraproject/QoSBooking/pull/117, https://github.com/camaraproject/QoSBooking/pull/143, https://github.com/camaraproject/QoSBooking/pull/154, https://github.com/camaraproject/QoSBooking/pull/178, https://github.com/camaraproject/QoSBooking/pull/179 and https://github.com/camaraproject/QoSBooking/pull/194, @jlurien in https://github.com/camaraproject/QoSBooking/pull/105
   - Request inputs carry explicit length and range limits
   - Port numbers must be at least 1
   - `duration` are bounded only by the 32-bit integer range; the effective limit is the `maxDuration` of the QoS Profile
