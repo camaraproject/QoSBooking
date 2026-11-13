@@ -159,7 +159,6 @@ Changes documented below are compared to version 0.1.0.
   - Server URL updated to `{apiRoot}/qos-booking-and-assignment/v0.2`
 * Aligned the test definitions with the Commonalities r4.4 test template by @gmuratk in https://github.com/camaraproject/QoSBooking/pull/155, https://github.com/camaraproject/QoSBooking/pull/157, https://github.com/camaraproject/QoSBooking/pull/159 and https://github.com/camaraproject/QoSBooking/pull/183
   - One feature file per operation, 152 scenarios in total, covering every documented status and error code; scenarios depending on implementation options are marked `CONDITIONAL`
-  - Follow-up scenarios restructured to a single When/Then; indentation of the `assignDevices` feature file corrected
 * Error `422 EVENT_NOTIFICATIONS_NOT_SUPPORTED` on `createBooking`, returned when a `sink` is provided but the API provider does not support event notifications by @gmuratk in https://github.com/camaraproject/QoSBooking/pull/155
 * `sinkCredential.credentialType` value `PRIVATE_KEY_JWT`, and error `422 PRIVATE_KEY_JWT_NOT_CONFIGURED` on `createBooking`, returned when `sinkCredential.credentialType` is `PRIVATE_KEY_JWT` and no JWK Set is configured for the API consumer by @gmuratk in https://github.com/camaraproject/QoSBooking/pull/101, https://github.com/camaraproject/QoSBooking/pull/102 and https://github.com/camaraproject/QoSBooking/pull/183
 * `sink` is returned in `BookingOutput` when event delivery is accepted by the API provider by @gmuratk in https://github.com/camaraproject/QoSBooking/pull/155
