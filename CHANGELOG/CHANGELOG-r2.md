@@ -218,7 +218,8 @@ Changes documented below are compared to version 0.1.0.
 * Property `status` renamed to `bookingStatus` in responses and in the `data` of the `status-changed` notification by @Masa8106 in https://github.com/camaraproject/QoSBooking/pull/88
 * Status `AVAILABLE` renamed `ACTIVATED` by @Masa8106 in https://github.com/camaraproject/QoSBooking/pull/88
 * Status `UNAVAILABLE` renamed `TERMINATED` by @Masa8106 in https://github.com/camaraproject/QoSBooking/pull/88
-* `StatusInfo` renamed `BookingStatusInfo` and it includes additionally `BOOKING_DELCINED` and `BOOKING_REVOKED` by @Masa8106 in https://github.com/camaraproject/QoSBooking/pull/88
+* New `statusInfo` values `BOOKING_DECLINED` and `BOOKING_REVOKED`; a booking rejected synchronously by `createBooking` is returned with `bookingStatus: TERMINATED` and `statusInfo: BOOKING_DECLINED` by @Masa8106 in https://github.com/camaraproject/QoSBooking/pull/88
+* `createBooking` 409 returns `ALREADY_EXISTS` instead of the deprecated `CONFLICT` for a duplicate or overlapping booking by @Masa8106 in https://github.com/camaraproject/QoSBooking/pull/116 and https://github.com/camaraproject/QoSBooking/pull/154
 
 ### Added
 
