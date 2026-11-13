@@ -186,7 +186,6 @@ Changes documented below are compared to version 0.1.0.
 
 ### Fixed
 
-* Operation descriptions corrected to reflect the actual behavior (address Issue #64) by @RamTMO in https://github.com/camaraproject/QoSBooking/pull/76
 * Examples updated to the new status fields and values; `ASSIGNMENT_RELEASED` returns `assignmentStatus: RELEASED` and `statusInfo: DEVICE_RELEASED` instead of `SUCCESSFUL`; `BOOKING_PENDING` includes a `bookingId` by @gmuratk in https://github.com/camaraproject/QoSBooking/pull/139
 * Validation warnings resolved by @gmuratk in https://github.com/camaraproject/QoSBooking/pull/139, https://github.com/camaraproject/QoSBooking/pull/157 and https://github.com/camaraproject/QoSBooking/pull/159
   - `BOOKING_FAILURE` example referenced in the `createBooking` 201 response
