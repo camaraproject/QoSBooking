@@ -243,6 +243,7 @@ Changes documented below are compared to version 0.1.0.
 
 * Lifecycle of booking status was changed and clarified by @Masa8106 in https://github.com/camaraproject/QoSBooking/pull/88 and https://github.com/camaraproject/QoSBooking/pull/147  (see Breaking changes)
 * Default assumption for `ApplicationServer` and its `Port` was specified by @Masa8106 in https://github.com/camaraproject/QoSBooking/pull/146
+* `createBooking` 409 returns `ALREADY_EXISTS` instead of the deprecated `CONFLICT` for a duplicate or overlapping booking by @Masa8106 in https://github.com/camaraproject/QoSBooking/pull/116 and https://github.com/camaraproject/QoSBooking/pull/154 (see Breaking changes)
 
 ### Fixed
 
