@@ -145,7 +145,6 @@ Changes documented below are compared to version 0.1.0.
 * `createBooking` error code `QOS_BOOKING.DURATION_OUT_OF_RANGE` renamed to `QOS_BOOKING_AND_ASSIGNMENT.DURATION_OUT_OF_RANGE` by @gmuratk in https://github.com/camaraproject/QoSBooking/pull/102
 * Number of devices per booking and per `assignDevices` / `releaseDevices` request limited to 50 by @gmuratk in https://github.com/camaraproject/QoSBooking/pull/102
   - `bookingDeviceCount` 1 to 50, `remainingDevices` 0 to 50, device arrays in requests and responses and the `retrieveBookingByDevice` result limited to 50 items
-* `sinkCredential.credentialType` values `PLAIN` and `REFRESHTOKEN` are no longer supported; only `ACCESSTOKEN` and `PRIVATE_KEY_JWT` remain by @gmuratk in https://github.com/camaraproject/QoSBooking/pull/101
 
 ### Added
 
