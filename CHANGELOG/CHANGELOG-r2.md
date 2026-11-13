@@ -122,8 +122,6 @@ Changes documented below are compared to version 0.1.0.
   - `BOOKING_EXPIRED` replaced by `DURATION_EXPIRED`; `BOOKING_ACCEPTED` deprecated in favour of `BOOKING_SCHEDULED`
   - New values `DEVICE_RELEASED` and `RELEASE_PENDING`
 * `numDevices` (request) and `totalDevices` (responses) renamed to `bookingDeviceCount` by @gmuratk in https://github.com/camaraproject/QoSBooking/pull/139
-* `createBooking` returns `201` with a `bookingId` for every outcome by @gmuratk in https://github.com/camaraproject/QoSBooking/pull/139 and https://github.com/camaraproject/QoSBooking/pull/183
-  - A booking rejected synchronously is created in state `TERMINATED` and its `bookingId` is returned; consumers must no longer assume that a rejected request has no `bookingId`
 * `deleteBooking` responses changed by @gmuratk in https://github.com/camaraproject/QoSBooking/pull/139 and https://github.com/camaraproject/QoSBooking/pull/183, and by @RamTMO in https://github.com/camaraproject/QoSBooking/pull/81
   - `200` with a response body replaced by `204 No Content` for synchronous success
   - `202` keeps the current `bookingStatus` with `statusInfo: DELETE_REQUESTED`; the cancellation event (`TERMINATED` / `BOOKING_CANCELLED`) is sent only for asynchronous (`202`) deletions
