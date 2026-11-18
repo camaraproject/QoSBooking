@@ -2,7 +2,7 @@ repository:
   repository_name: QoSBooking
   release_tag: r2.3
   release_type: public-release
-  release_date: null
+  release_date: '2026-11-18T01:11:17Z'
   src_commit_sha: 52445f57a24cad85c5b198ec318b3b47785912d9
 apis:
 - api_name: qos-booking-and-assignment
